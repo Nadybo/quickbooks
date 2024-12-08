@@ -1,23 +1,21 @@
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 function Home() {
-    console.log('Home Page Rendered');
+  const { t } = useTranslation();
   return (
     <Tabs
-      defaultActiveKey="profile"
+      defaultActiveKey="home"
       id="uncontrolled-tab-example"
       className="mb-3"
     >
-      <Tab eventKey="home" title="Home" >
+      <Tab eventKey="home" title={t('body.home')} >
         главная страница
       </Tab>
-      <Tab eventKey="profile" title="Profile">
-        Tab content for Profile
-      </Tab>
-      <Tab eventKey="contact" title="Contact" disabled>
-        Tab content for Contact
+      <Tab eventKey="planner" title="Planner">
+        Tab content for planns
       </Tab>
     </Tabs>
   );

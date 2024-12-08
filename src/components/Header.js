@@ -5,6 +5,7 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import ToggleButton from 'react-bootstrap/ToggleButton';
+import styled from 'styled-components';
 
 const Header = () => {
   const { t, i18n } = useTranslation();
@@ -17,7 +18,19 @@ const Header = () => {
     { name: 'En', value: 'en' },
     { name: 'RU', value: 'ru' },
   ];
+  const CustomNavbar = styled(Navbar)`
+  background-color: #333 !important;
+  color: white;
 
+  .navbar-brand {
+    font-size: 1.8rem;
+    color: #ff6600 !important;
+  }
+
+  .nav-link {
+    color: #ff6600 !important;
+  }
+`;
   return (
     <Navbar expand="lg" className="bg-body-tertiary">
       <Container>

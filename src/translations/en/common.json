@@ -3,8 +3,7 @@
     "welcome": "Welcome to our site!"
   },
   "body": {
-    "description": "This is the main content area.",
-    "more_info": "Click here for more info"
+    "home": "Home"
   },
   "sidebar": {
     "home": "Home",
