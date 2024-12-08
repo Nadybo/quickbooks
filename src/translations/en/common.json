@@ -1,0 +1,16 @@
+{
+  "header": {
+    "welcome": "Welcome to our site!"
+  },
+  "body": {
+    "description": "This is the main content area.",
+    "more_info": "Click here for more info"
+  },
+  "sidebar": {
+    "home": "Home",
+    "transactions": "Transactions",
+    "accounts":"Accounts",
+    "reports" : "Reports",
+    "customers" : "customers"
+  }
+}
