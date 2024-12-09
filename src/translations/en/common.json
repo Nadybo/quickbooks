@@ -3,7 +3,8 @@
     "welcome": "Welcome to our site!"
   },
   "body": {
-    "home": "Home"
+    "home": "Home",
+    "planner" : "Planner"
   },
   "sidebar": {
     "home": "Home",
@@ -11,5 +12,14 @@
     "accounts":"Accounts",
     "reports" : "Reports",
     "customers" : "customers"
-  }
+  },
+  "form":{
+      "register":"Register",
+      "password":"Password",
+      "email":"Email address",
+      "text":"If you don't have an account, go here, ",
+      "btnLogin":"Login",
+      "textToLogin":"If you have an account, go here, ",
+      "login":"Login"
+    }
 }
