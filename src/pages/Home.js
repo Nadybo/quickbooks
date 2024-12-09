@@ -2,6 +2,10 @@ import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import Card from 'react-bootstrap/Card';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
+import financeImage from './images/finance.jpg'
 import styled from 'styled-components';
 
 function Home() {
@@ -9,8 +13,27 @@ function Home() {
   return (
     <Tabs>
       <Tab eventKey="home" title={t('body.home')} >
-        главная страница
+      <ScrollableContainer>
+      <Row xs={1} md={2} className="g-4">
+        {Array.from({ length: 8 }).map((_, idx) => (
+          <Col key={idx}>
+            <Card>
+              <Card.Img variant="top" src={financeImage} />
+              <Card.Body>
+                <Card.Title>Card title</Card.Title>
+                <Card.Text>
+                  This is a longer card with supporting text below as a natural
+                  lead-in to additional content. This content is a little bit
+                  longer.
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+        </Row>
+      </ScrollableContainer>
       </Tab>
+
       <Tab eventKey="planner" title={t('body.planner')}>
         Tab content for planns
       </Tab>
@@ -19,3 +42,10 @@ function Home() {
 }
 
 export default Home;
+
+const ScrollableContainer = styled.div`
+  max-height: 780px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-top: 10px;
+`;

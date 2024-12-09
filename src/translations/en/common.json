@@ -21,5 +21,10 @@
       "btnLogin":"Login",
       "textToLogin":"If you have an account, go here, ",
       "login":"Login"
+    },
+    "modal":{
+      "userSettings":"User Settings",
+      "logout":"Logout"
     }
+
 }

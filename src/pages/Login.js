@@ -33,14 +33,12 @@ function LoginPage({ onLogin }) {
             .then((response) => {
                 console.log('Вход успешен:', response.data);
                 toast.success('Вы успешно вошли!', { position: 'top-center' });
-
                 // Сохраняем токен
                 localStorage.setItem('userToken', response.data.token);
 
                 // Вызываем родительскую функцию, которая обновит состояние авторизации
                 onLogin(true); // Передаем true, чтобы родительский компонент знал, что пользователь авторизован
 
-                // Перенаправление на главную страницу
                 navigate('/');
             })
             .catch((error) => {

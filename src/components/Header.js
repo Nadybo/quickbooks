@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import Modal from 'react-bootstrap/Modal';
-import Button from 'react-bootstrap/Button';
+import { Button } from 'react-bootstrap';
 
 const Navbar = ({ userName, onLogout }) => {
   const { t, i18n } = useTranslation();
@@ -52,10 +52,9 @@ const Navbar = ({ userName, onLogout }) => {
       {/* Модальное окно */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>{t('User Settings')}</Modal.Title>
+          <Modal.Title>{t('modal.userSettings')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>{t('Update your profile or logout')}</p>
           <Button variant="secondary" className="mb-3 w-100">
             {t('Change Password')}
           </Button>
@@ -65,7 +64,7 @@ const Navbar = ({ userName, onLogout }) => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="danger" onClick={onLogout}>
-            {t('Logout')}
+            {t('modal.logout')}
           </Button>
         </Modal.Footer>
       </Modal>

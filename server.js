@@ -3,7 +3,7 @@ const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');  // Используйте bcryptjs вместо bcrypt для совместимости
+const bcrypt = require('bcryptjs'); 
 require('dotenv').config();
 const secretKey = process.env.SECRET_KEY; // Используйте переменные окружения для хранения секретов
 
@@ -26,19 +26,6 @@ db.connect((err) => {
     } else {
         console.log('Соединение с базой данных установлено.');
     }
-});
-
-// Пример: Получение всех пользователей
-app.get('/users', (req, res) => {
-    const query = 'SELECT * FROM Users';
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send('Ошибка на сервере');
-        } else {
-            res.json(results);
-        }
-    });
 });
 
 // Регистрация пользователя
@@ -69,7 +56,6 @@ app.post('/register', async (req, res) => {
         res.status(500).send({ message: 'Ошибка при хэшировании пароля.' });
     }
 });
-
 
 // Вход пользователя
 app.post('/login', (req, res) => {
