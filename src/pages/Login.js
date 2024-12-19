@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { FloatingLabel, Form, Button } from 'react-bootstrap';
 
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, user  }) {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -13,7 +13,6 @@ function LoginPage({ onLogin }) {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
-
     const { t } = useTranslation();
 
     const handleChange = (e) => {
@@ -33,12 +32,13 @@ function LoginPage({ onLogin }) {
             .then((response) => {
                 console.log('Вход успешен:', response.data);
                 toast.success('Вы успешно вошли!', { position: 'top-center' });
-                // Сохраняем токен
-                localStorage.setItem('userToken', response.data.token);
 
-                // Вызываем родительскую функцию, которая обновит состояние авторизации
-                onLogin(true); // Передаем true, чтобы родительский компонент знал, что пользователь авторизован
+                const { name, role } = response.data.user;
+                localStorage.setItem('userName', name);
+                localStorage.setItem('userRole', role);
 
+                onLogin(true);
+                user({ name, role });
                 navigate('/');
             })
             .catch((error) => {

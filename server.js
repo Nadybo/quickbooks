@@ -17,7 +17,7 @@ const db = mysql.createConnection({
     host: '127.0.0.1', 
     user: 'root',      
     password: 'root', 
-    database: 'QuickBooks',
+    database: 'quickBooks',
 });
 
 db.connect((err) => {
@@ -89,9 +89,18 @@ app.post('/login', (req, res) => {
             }
 
             // Создание JWT токена
-            const token = jwt.sign({ userId: user.user_id, role: user.role }, secretKey, { expiresIn: '1h' });
+             const token = jwt.sign({ userId: user.user_id, role: user.role, name: user.name }, secretKey, { expiresIn: '1h' });
 
-            res.send({ message: 'Вход успешен!', token });
+            res.send({
+                message: 'Вход успешен!',
+                token,
+                user: {
+                    name: user.name,
+                    role: user.role
+                }
+            });
+
+
         } catch (err) {
             console.error('Ошибка при проверке пароля:', err);
             res.status(500).send({ message: 'Ошибка при проверке пароля.' });
@@ -99,7 +108,77 @@ app.post('/login', (req, res) => {
     });
 });
 
-// Запуск сервера
+// Получение всех клиентов с возможностью поиска
+app.get('/clients', (req, res) => {
+    const search = req.query.search || '';
+    const query = `
+        SELECT * FROM Clients 
+        WHERE name LIKE ? OR email LIKE ? OR phone LIKE ? OR type LIKE ?
+    `;
+    db.query(query, [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`], (err, results) => {
+        if (err) {
+            console.error('Ошибка получения клиентов:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        res.send(results);
+    });
+});
+
+// Добавление нового клиента
+app.post('/clients', (req, res) => {
+    const { name, email, phone, address, type } = req.body;
+
+    if (!name || !type) {
+        return res.status(400).send({ message: 'Имя и тип клиента обязательны.' });
+    }
+
+    const query = `
+        INSERT INTO Clients (name, email, phone, address, type, created_at) 
+        VALUES (?, ?, ?, ?, ?, NOW())
+    `;
+    db.query(query, [name, email, phone, address, type], (err, result) => {
+        if (err) {
+            console.error('Ошибка добавления клиента:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        res.status(201).send({ id: result.insertId, name, email, phone, address, type });
+    });
+});
+
+// Обновление клиента
+app.put('/clients/:id', (req, res) => {
+    const { id } = req.params;
+    const { name, email, phone, address, type } = req.body;
+
+    const query = `
+        UPDATE Clients 
+        SET name = ?, email = ?, phone = ?, address = ?, type = ?, updated_at = NOW()
+        WHERE id = ?
+    `;
+    db.query(query, [name, email, phone, address, type, id], (err, result) => {
+        if (err) {
+            console.error('Ошибка обновления клиента:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        res.send({ message: 'Клиент обновлен успешно!' });
+    });
+});
+
+// Удаление клиента
+app.delete('/clients/:id', (req, res) => {
+    const { id } = req.params;
+
+    const query = `DELETE FROM Clients WHERE id = ?`;
+    db.query(query, [id], (err, result) => {
+        if (err) {
+            console.error('Ошибка удаления клиента:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        res.send({ message: 'Клиент удален успешно!' });
+    });
+});
+
+
 app.listen(port, () => {
     console.log(`Сервер запущен на порту ${port}`);
 });

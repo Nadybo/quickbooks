@@ -5,8 +5,6 @@ import { Stack, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styled from 'styled-components';
 import logo from './images/logo.png';
-import forward from './images/forward-arrow.png'
-import back from './images/back-arrow.png'
 
 const Sidebar = () => {
   const { t } = useTranslation();

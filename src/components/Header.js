@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import Modal from 'react-bootstrap/Modal';
-import { Button } from 'react-bootstrap';
+import { Button } from 'react-bootstrap'
 
-const Navbar = ({ userName, onLogout }) => {
+const Navbar = ({ user, onLogout }) => {
   const { t, i18n } = useTranslation();
   const [showModal, setShowModal] = useState(false);
 
@@ -40,10 +40,10 @@ const Navbar = ({ userName, onLogout }) => {
             </ButtonGroup>
             <Avatar onClick={() => setShowModal(true)}>
               <img
-                src="https://via.placeholder.com/40" // Замените на ссылку к картинке пользователя
+                src="https://via.placeholder.com/40"
                 alt="User Avatar"
               />
-              <UserName>{userName}</UserName>
+              <UserName></UserName>
             </Avatar>
           </RightSection>
         </NavbarContainer>
@@ -55,12 +55,8 @@ const Navbar = ({ userName, onLogout }) => {
           <Modal.Title>{t('modal.userSettings')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Button variant="secondary" className="mb-3 w-100">
-            {t('Change Password')}
-          </Button>
-          <Button variant="secondary" className="mb-3 w-100">
-            {t('Change Name')}
-          </Button>
+        <p>{t('modal.welcome', { name: user?.name })}</p>
+        <p>{t('modal.role', { role: user?.role })}</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="danger" onClick={onLogout}>
