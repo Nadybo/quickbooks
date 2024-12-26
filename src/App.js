@@ -9,7 +9,6 @@ import Customers from './pages/Customers';
 import Transactions from './pages/Transactions';
 import RegisterForm from './pages/Register';
 import LoginPage from './pages/Login';
-import styled from 'styled-components';
 
   function PrivateRoute({ children, isAuthenticated }) {
     return isAuthenticated ? children : <Navigate to="/login" />;

@@ -1,259 +1,291 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { FaEdit, FaTrash, FaFilter, FaSortAlphaDown, FaSortAlphaUp } from 'react-icons/fa';
-import Table from 'react-bootstrap/Table';
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
-import Modal from 'react-bootstrap/Modal';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { FaTrash, FaEdit, FaSortAlphaDown, FaSortAlphaUp, FaFilter } from 'react-icons/fa';
+import { ToastContainer, toast } from 'react-toastify';
+import { Modal, Button, Form } from "react-bootstrap";
+import 'react-toastify/dist/ReactToastify.css';
+import axios from "axios";
+
+// Стили таблицы и контейнера
+const StyledTableContainer = styled.div`
+  max-height: 680px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+`;
+
+const StyledTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 1;
+  }
+
+  tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+  }
+  tbody tr:nth-child(even) {
+    background-color: #ffffff;
+  }
+`;
 
 function Customers() {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [modalData, setModalData] = useState({
-    id: null,
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    type: 'client',
+  const [sortType, setSortType] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [showModal, setShowModal] = useState(false); // Для управления модальным окном
+  const [isEditMode, setIsEditMode] = useState(false); // Режим редактирования
+  const [selectedClient, setSelectedClient] = useState(null); // Выбранный клиент
+  const [clientData, setClientData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    type: "client",
   });
-  const [sortAscending, setSortAscending] = useState(true);
+
+  const handleShowModal = (client = null) => {
+    setIsEditMode(!!client);
+    setSelectedClient(client);
+    setClientData(
+      client || {
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        type: "client",
+      }
+    );
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => setShowModal(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setClientData({ ...clientData, [name]: value });
+  };
+
+  const handleSaveClient = async () => {
+    try {
+      if (isEditMode && selectedClient) {
+        // Редактирование клиента
+        await axios.put(`http://localhost:5000/clients/${selectedClient.id}`, clientData);
+        toast.success("Клиент успешно обновлен!");
+      } else {
+        // Добавление нового клиента
+        await axios.post("http://localhost:5000/clients", clientData);
+        toast.success("Клиент успешно добавлен!");
+      }
+      handleCloseModal();
+      fetchClients(); // Обновляем список клиентов
+    } catch (error) {
+      toast.error("Ошибка при сохранении клиента: " + error.message);
+    }
+  };
+
+  // Уведомления
+  const notifyError = (message) => toast.error(message);
+
+  // Получение данных с сервера
+  const fetchClients = () => {
+    fetch('http://localhost:5000/clients')
+      .then((response) => {
+        if (!response.ok) throw new Error('Ошибка сервера');
+        return response.json();
+      })
+      .then((data) => setClients(data))
+      .catch((error) => notifyError('Ошибка загрузки данных: ' + error.message));
+  };
 
   useEffect(() => {
     fetchClients();
-  });
+  }, []);
 
-  const fetchClients = async () => {
-    try {
-      const response = await axios.get(`http://localhost:5000/clients?search=${search}`);
-      setClients(response.data);
-    } catch (error) {
-      console.error('Ошибка загрузки клиентов:', error);
-    }
+  // Удаление клиента
+  const deleteClient = (id) => {
+    fetch(`http://localhost:5000/clients/${id}`, {
+      method: 'DELETE',
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Ошибка удаления клиента');
+        toast.success('Клиент успешно удален!');
+        setClients(clients.filter((client) => client.id !== id));
+      })
+      .catch((error) => notifyError('Ошибка удаления клиента: ' + error.message));
   };
 
-  const handleSave = async () => {
-    try {
-      if (modalData.id) {
-        // Обновление
-        await axios.put(`http://localhost:5000/clients/${modalData.id}`, modalData);
-      } else {
-        // Добавление
-        await axios.post('http://localhost:5000/clients', modalData);
+  // Сортировка и фильтрация
+  const filteredClients = clients
+    .filter((client) =>
+      client.name.toLowerCase().includes(search.toLowerCase()) ||
+      client.email.toLowerCase().includes(search.toLowerCase()) ||
+      client.phone.includes(search) ||
+      client.type.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortType === 'name') {
+        return sortOrder === 'asc'
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
+      } else if (sortType === 'date') {
+        const dateA = new Date(a.created_at);
+        const dateB = new Date(b.created_at);
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
       }
-      setShowModal(false);
-      fetchClients();
-    } catch (error) {
-      console.error('Ошибка сохранения клиента:', error);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:5000/clients/${id}`);
-      fetchClients();
-    } catch (error) {
-      console.error('Ошибка удаления клиента:', error);
-    }
-  };
-
-  const handleSort = () => {
-    const sortedClients = [...clients].sort((a, b) => {
-      if (sortAscending) {
-        return a.name.localeCompare(b.name); 
-      } else {
-        return b.name.localeCompare(a.name);
-      }
+      return 0;
     });
-    setClients(sortedClients);
-    setSortAscending(!sortAscending);
-  };
-
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(search.toLowerCase()) ||
-    client.email.toLowerCase().includes(search.toLowerCase()) ||
-    client.phone.toLowerCase().includes(search.toLowerCase()) ||
-    client.type.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
-    <ClientsWrapper>
-      <h3>Список клиентов</h3>
-      
-      <SearchWrapper>
-        <SearchInput
+    <div className="container my-4">
+      <ToastContainer />
+      <h1 className="mb-4">Список клиентов</h1>
+      <div className="d-flex align-items-center mb-3">
+        <input
           type="text"
-          placeholder="Поиск по имени, email, телефону или типу"
+          className="form-control me-3"
+          placeholder="Поиск клиентов..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <IconButton onClick={() => {}}>
-            <FaFilter size={20} color="gray" />
-        </IconButton>
-        <AddButton
+        <Button variant="primary" onClick={() => handleShowModal()}>
+          Добавить клиента
+        </Button>
+        <button
+          className="btn btn-outline-secondary me-2"
           onClick={() => {
-            setModalData({ id: null, name: '', email: '', phone: '', address: '', type: 'client' });
-            setShowModal(true);
+            setSortType('name');
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
           }}
         >
-          Добавить клиента
-        </AddButton>
-        <Button variant="outline-secondary" onClick={handleSort}>
-        {sortAscending ? <FaSortAlphaDown /> : <FaSortAlphaUp />} Сортировать по имени
-      </Button>
-      </SearchWrapper>
-
-      <TableContainer>
-        <Table striped bordered hover className="mt-3">
-          <StickyTableHeader>
+          {sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
+        </button>
+        <button
+          className="btn btn-outline-secondary"
+          onClick={() => {
+            setSortType('date');
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+          }}
+        >
+          <FaFilter />
+        </button>
+      </div>
+      <StyledTableContainer>
+        <StyledTable className="table table-hover">
+          <thead>
             <tr>
-              <th>ID</th>
               <th>Имя</th>
-              <th>Email</th>
+              <th>Почта</th>
               <th>Телефон</th>
-              <th>Адрес</th>
               <th>Тип</th>
+              <th>Дата создания</th>
               <th>Действия</th>
             </tr>
-          </StickyTableHeader>
+          </thead>
           <tbody>
-            {clients.map((client) => (
+            {filteredClients.map((client) => (
               <tr key={client.id}>
-                <td>{client.id}</td>
                 <td>{client.name}</td>
                 <td>{client.email}</td>
                 <td>{client.phone}</td>
-                <td>{client.address}</td>
                 <td>{client.type}</td>
+                <td>{new Date(client.created_at).toLocaleDateString()}</td>
                 <td>
-                <IconButton onClick={() => {
-                    setModalData(client);
-                    setShowModal(true);
-                  }}>
-                    <FaEdit size={20} color="orange" />
-                  </IconButton>{' '}
-                  <IconButton onClick={() => handleDelete(client.id)}>
-                    <FaTrash size={20} color="red" />
-                  </IconButton>
+                  <button
+                    className="btn btn-sm btn-outline-danger me-2"
+                    onClick={() => deleteClient(client.id)}
+                  >
+                    <FaTrash />
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => handleShowModal(client)}
+                  >
+                    <FaEdit />
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
-        </Table>
-      </TableContainer>
+        </StyledTable>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{modalData.id ? 'Изменить клиента' : 'Добавить клиента'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Имя</Form.Label>
-              <Form.Control
-                type="text"
-                value={modalData.name}
-                onChange={(e) => setModalData({ ...modalData, name: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                value={modalData.email}
-                onChange={(e) => setModalData({ ...modalData, email: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Телефон</Form.Label>
-              <Form.Control
-                type="text"
-                value={modalData.phone}
-                onChange={(e) => setModalData({ ...modalData, phone: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Адрес</Form.Label>
-              <Form.Control
-                type="text"
-                value={modalData.address}
-                onChange={(e) => setModalData({ ...modalData, address: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Тип</Form.Label>
-              <Form.Select
-                value={modalData.type}
-                onChange={(e) => setModalData({ ...modalData, type: e.target.value })}
-              >
-                <option value="client">Клиент</option>
-                <option value="supplier">Поставщик</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Отмена</Button>
-          <Button variant="primary" onClick={handleSave}>Сохранить</Button>
-        </Modal.Footer>
-      </Modal>
-    </ClientsWrapper>
+        <Modal show={showModal} onHide={handleCloseModal}>
+          <Modal.Header closeButton>
+            <Modal.Title>{isEditMode ? "Редактировать клиента" : "Добавить клиента"}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Имя</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="name"
+                  placeholder="Введите имя"
+                  value={clientData.name}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Email</Form.Label>
+                <Form.Control
+                  type="email"
+                  name="email"
+                  placeholder="Введите email"
+                  value={clientData.email}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Телефон</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="phone"
+                  placeholder="Введите телефон"
+                  value={clientData.phone}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Адрес</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="address"
+                  placeholder="Введите адрес"
+                  value={clientData.address}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Тип клиента</Form.Label>
+                <Form.Select
+                  name="type"
+                  value={clientData.type}
+                  onChange={handleInputChange}
+                >
+                  <option value="client">Клиент</option>
+                  <option value="supplier">Поставщик</option>
+                </Form.Select>
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseModal}>
+              Отменить
+            </Button>
+            <Button variant="primary" onClick={handleSaveClient}>
+              Сохранить
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      </StyledTableContainer>
+    </div>
   );
 }
 
 export default Customers;
-
-const ClientsWrapper = styled.div`
-  h2 {
-    margin-bottom: 15px;
-  }
-`;
-
-const SearchWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  background-color: white;
-  z-index: 2;
-  padding: 10px 0;
-  border-bottom: 1px solid #ddd;
-`;
-
-const SearchInput = styled(Form.Control)`
-  width: 70%;
-  margin-right: 10px;
-`;
-
-const AddButton = styled(Button)`
-  border: none;
-  background-color: #2CA01C;
-  flex-shrink: 0;
-  &:hover{
-    background-color:rgba(49, 170, 33, 0.8);
-  }
-`;
-
-const TableContainer = styled.div`
-  margin-top: 15px;
-  max-height: 700px;
-  overflow-y: auto;
-`;
-
-const StickyTableHeader = styled.thead`
-  position: sticky;
-  top: 0;
-  background-color: #fff;
-  z-index: 1;
-`;
-
-const IconButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  margin: 0;
-`;
