@@ -55,24 +55,35 @@ app.post('/register', async (req, res) => {
     }
 
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const query = 'INSERT INTO Users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, NOW())';
-        db.query(query, [name, email, hashedPassword, role], (err, results) => {
+        // Проверка, существует ли уже пользователь с таким email
+        const checkQuery = 'SELECT * FROM Users WHERE email = ?';
+        db.query(checkQuery, [email], async (err, results) => {
             if (err) {
                 console.error(err);
-                if (err.code === 'ER_DUP_ENTRY') {
-                    return res.status(400).send({ message: 'Пользователь с таким email уже существует.' });
-                }
-                return res.status(500).send({ message: 'Ошибка сервера.' });
+                return res.status(500).send({ message: 'Ошибка при проверке email.' });
             }
-            res.status(201).send({ message: 'Регистрация успешна!' });
+
+            if (results.length > 0) {
+                return res.status(400).send({ message: 'Пользователь с таким email уже существует.' });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            const query = 'INSERT INTO Users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, NOW())';
+            db.query(query, [name, email, hashedPassword, role], (err, results) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send({ message: 'Ошибка сервера.' });
+                }
+                res.status(201).send({ message: 'Регистрация успешна!' });
+            });
         });
     } catch (err) {
         console.error(err);
         res.status(500).send({ message: 'Ошибка при хэшировании пароля.' });
     }
 });
+
 
 // Вход пользователя
 app.post('/login', (req, res) => {
@@ -104,7 +115,7 @@ app.post('/login', (req, res) => {
                 return res.status(401).send({ message: 'Неверный email или пароль.' });
             }
 
-            const token = jwt.sign({ userId: user.id, role: user.role, name: user.name }, secretKey, { expiresIn: '1h' });
+            const token = jwt.sign({ userId: user.id, role: user.role, name: user.name, email: user.email }, secretKey, { expiresIn: '1h' });
 
             res.send({
                 message: 'Вход успешен!',
@@ -112,7 +123,8 @@ app.post('/login', (req, res) => {
                 user: {
                     user_id: user.id,
                     name: user.name,
-                    role: user.role
+                    role: user.role,
+                    email: user.email
                 }
             });
         } catch (err) {

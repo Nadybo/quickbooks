@@ -49,7 +49,7 @@ function Customers() {
     address: "",
     type: "client",
   });
-  const token = localStorage.getItem("token"); 
+  const token = localStorage.getItem("userToken"); 
 
   const handleShowModal = (client = null) => {
     setIsEditMode(!!client);

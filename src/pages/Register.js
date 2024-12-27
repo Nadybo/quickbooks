@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FloatingLabel, Form, Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function RegisterForm() {
     const [formData, setFormData] = useState({
@@ -16,7 +17,6 @@ function RegisterForm() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // Обработка изменения полей ввода
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prevData) => ({
@@ -25,15 +25,14 @@ function RegisterForm() {
         }));
     };
 
-    // Обработка отправки формы
     const handleSubmit = (e) => {
         e.preventDefault();
-
+        console.log('Отправляемые данные:', formData);
+    
         axios.post('http://localhost:5000/register', formData)
             .then((response) => {
                 console.log('Регистрация успешна:', response.data);
-                toast.success('Регистрация успешна!', { position: 'top-center' });
-                // Перенаправление на главную страницу
+                toast.success('Регистрация успешна!');
                 navigate('/login');
             })
             .catch((error) => {
@@ -41,6 +40,8 @@ function RegisterForm() {
                 setError(error.response?.data?.message || 'Ошибка регистрации');
             });
     };
+    
+      
 
     return (
         <div className="container mt-5">

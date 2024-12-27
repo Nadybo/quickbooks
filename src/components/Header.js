@@ -17,9 +17,10 @@ const Navbar = ({ onLogout }) => {
       return {
         name: decodedToken.name,
         role: decodedToken.role,
+        email: decodedToken.email, 
       };
     }
-    return { name: '', role: '' }; // Возвращаем пустые данные, если нет токена
+    return { name: '', role: '', email: '' }; // Возвращаем пустые данные, если нет токена
   };
 
   const user = getUserDataFromToken(); // Получаем данные пользователя из токена
@@ -55,8 +56,9 @@ const Navbar = ({ onLogout }) => {
               ))}
             </ButtonGroup>
             <Avatar onClick={() => setShowModal(true)}>
+              {/* Если аватар есть, показываем его, иначе показываем заглушку */}
               <img
-                src="https://via.placeholder.com/40"
+                src={user.avatarUrl || "https://via.placeholder.com/40"}
                 alt="User Avatar"
               />
               <UserName>{user.name}</UserName>
@@ -73,6 +75,7 @@ const Navbar = ({ onLogout }) => {
         <Modal.Body>
           <p>{"name: " + user.name}</p>
           <p>{"role: " + user.role}</p>
+          <p>{"email: " + user.email}</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="danger" onClick={onLogout}>
