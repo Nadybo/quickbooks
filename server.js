@@ -17,7 +17,7 @@ const db = mysql.createConnection({
     host: '127.0.0.1', 
     user: 'root',      
     password: 'root', 
-    database: 'quickBooks',
+    database: 'quickbooks2',
 });
 
 db.connect((err) => {
@@ -28,6 +28,24 @@ db.connect((err) => {
     }
 });
 
+// Функция для аутентификации токена
+function authenticateToken(req, res, next) {
+    const token = req.headers['authorization']?.split(' ')[1]; 
+
+    if (!token) {
+        return res.status(401).send({ message: 'Токен не предоставлен' });
+    }
+
+    jwt.verify(token, secretKey, (err, user) => {
+        if (err) {
+            return res.status(403).send({ message: 'Неверный или устаревший токен' });
+        }
+
+        req.user = user; // Добавляем данные пользователя в запрос
+        next();
+    });
+}
+
 // Регистрация пользователя
 app.post('/register', async (req, res) => {
     const { name, email, password, role } = req.body;
@@ -37,7 +55,6 @@ app.post('/register', async (req, res) => {
     }
 
     try {
-        // Хэширование пароля
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const query = 'INSERT INTO Users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, NOW())';
@@ -81,26 +98,23 @@ app.post('/login', (req, res) => {
         const user = results[0];
 
         try {
-            // Сравнение пароля
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
                 console.error('Неверный пароль');
                 return res.status(401).send({ message: 'Неверный email или пароль.' });
             }
 
-            // Создание JWT токена
-             const token = jwt.sign({ userId: user.user_id, role: user.role, name: user.name }, secretKey, { expiresIn: '1h' });
+            const token = jwt.sign({ userId: user.id, role: user.role, name: user.name }, secretKey, { expiresIn: '1h' });
 
             res.send({
                 message: 'Вход успешен!',
                 token,
                 user: {
+                    user_id: user.id,
                     name: user.name,
                     role: user.role
                 }
             });
-
-
         } catch (err) {
             console.error('Ошибка при проверке пароля:', err);
             res.status(500).send({ message: 'Ошибка при проверке пароля.' });
@@ -108,14 +122,13 @@ app.post('/login', (req, res) => {
     });
 });
 
-// Получение всех клиентов с возможностью поиска
-app.get('/clients', (req, res) => {
-    const search = req.query.search || '';
-    const query = `
-        SELECT * FROM Clients 
-        WHERE name LIKE ? OR email LIKE ? OR phone LIKE ? OR type LIKE ?
-    `;
-    db.query(query, [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`], (err, results) => {
+// Получение клиентов, фильтруя по user_id
+app.get('/clients', authenticateToken, (req, res) => {
+    const userId = req.user.userId;  // Получаем userId из токена
+
+    const query = `SELECT * FROM Clients WHERE user_id = ?`;
+
+    db.query(query, [userId], (err, results) => {
         if (err) {
             console.error('Ошибка получения клиентов:', err);
             return res.status(500).send({ message: 'Ошибка сервера.' });
@@ -124,19 +137,18 @@ app.get('/clients', (req, res) => {
     });
 });
 
-// Добавление нового клиента
-app.post('/clients', (req, res) => {
+// Добавление нового клиента с user_id
+app.post('/clients', authenticateToken, (req, res) => {
     const { name, email, phone, address, type } = req.body;
+    const userId = req.user.userId;  // Получаем userId из токена
 
     if (!name || !type) {
         return res.status(400).send({ message: 'Имя и тип клиента обязательны.' });
     }
 
-    const query = `
-        INSERT INTO Clients (name, email, phone, address, type, created_at) 
-        VALUES (?, ?, ?, ?, ?, NOW())
-    `;
-    db.query(query, [name, email, phone, address, type], (err, result) => {
+    const query = `INSERT INTO Clients (name, email, phone, address, type, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())`;
+
+    db.query(query, [name, email, phone, address, type, userId], (err, result) => {
         if (err) {
             console.error('Ошибка добавления клиента:', err);
             return res.status(500).send({ message: 'Ошибка сервера.' });
@@ -145,39 +157,44 @@ app.post('/clients', (req, res) => {
     });
 });
 
-// Обновление клиента
-app.put('/clients/:id', (req, res) => {
+// Обновление клиента с проверкой на user_id
+app.put('/clients/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
     const { name, email, phone, address, type } = req.body;
+    const userId = req.user.userId;
 
-    const query = `
-        UPDATE Clients 
-        SET name = ?, email = ?, phone = ?, address = ?, type = ?, updated_at = NOW()
-        WHERE id = ?
-    `;
-    db.query(query, [name, email, phone, address, type, id], (err, result) => {
+    const query = `UPDATE Clients SET name = ?, email = ?, phone = ?, address = ?, type = ?, updated_at = NOW() WHERE id = ? AND user_id = ?`;
+
+    db.query(query, [name, email, phone, address, type, id, userId], (err, result) => {
         if (err) {
             console.error('Ошибка обновления клиента:', err);
             return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).send({ message: 'Клиент не найден или у вас нет прав на редактирование этого клиента.' });
         }
         res.send({ message: 'Клиент обновлен успешно!' });
     });
 });
 
-// Удаление клиента
-app.delete('/clients/:id', (req, res) => {
+// Удаление клиента с проверкой на user_id
+app.delete('/clients/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
+    const userId = req.user.userId;
 
-    const query = `DELETE FROM Clients WHERE id = ?`;
-    db.query(query, [id], (err, result) => {
+    const query = `DELETE FROM Clients WHERE id = ? AND user_id = ?`;
+
+    db.query(query, [id, userId], (err, result) => {
         if (err) {
             console.error('Ошибка удаления клиента:', err);
             return res.status(500).send({ message: 'Ошибка сервера.' });
         }
+        if (result.affectedRows === 0) {
+            return res.status(404).send({ message: 'Клиент не найден или у вас нет прав на удаление этого клиента.' });
+        }
         res.send({ message: 'Клиент удален успешно!' });
     });
 });
-
 
 app.listen(port, () => {
     console.log(`Сервер запущен на порту ${port}`);

@@ -49,6 +49,7 @@ function Customers() {
     address: "",
     type: "client",
   });
+  const token = localStorage.getItem("token"); 
 
   const handleShowModal = (client = null) => {
     setIsEditMode(!!client);
@@ -75,16 +76,31 @@ function Customers() {
   const handleSaveClient = async () => {
     try {
       if (isEditMode && selectedClient) {
-        // Редактирование клиента
-        await axios.put(`http://localhost:5000/clients/${selectedClient.id}`, clientData);
+        await axios.put(
+          `http://localhost:5000/clients/${selectedClient.id}`,
+          clientData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}` // Добавляем токен в заголовок
+            }
+          }
+        );
         toast.success("Клиент успешно обновлен!");
       } else {
         // Добавление нового клиента
-        await axios.post("http://localhost:5000/clients", clientData);
+        await axios.post(
+          "http://localhost:5000/clients",
+          clientData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
         toast.success("Клиент успешно добавлен!");
       }
       handleCloseModal();
-      fetchClients(); // Обновляем список клиентов
+      fetchClients();
     } catch (error) {
       toast.error("Ошибка при сохранении клиента: " + error.message);
     }
@@ -94,31 +110,37 @@ function Customers() {
   const notifyError = (message) => toast.error(message);
 
   // Получение данных с сервера
-  const fetchClients = () => {
-    fetch('http://localhost:5000/clients')
-      .then((response) => {
-        if (!response.ok) throw new Error('Ошибка сервера');
-        return response.json();
-      })
-      .then((data) => setClients(data))
-      .catch((error) => notifyError('Ошибка загрузки данных: ' + error.message));
+  const fetchClients = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/clients', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setClients(response.data);
+    } catch (error) {
+      notifyError('Ошибка загрузки данных: ' + error.message);
+    }
   };
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, []); // Пустой массив зависимостей для вызова только при монтировании компонента
 
   // Удаление клиента
-  const deleteClient = (id) => {
-    fetch(`http://localhost:5000/clients/${id}`, {
-      method: 'DELETE',
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error('Ошибка удаления клиента');
-        toast.success('Клиент успешно удален!');
-        setClients(clients.filter((client) => client.id !== id));
-      })
-      .catch((error) => notifyError('Ошибка удаления клиента: ' + error.message));
+  const deleteClient = async (id) => {
+
+    try {
+      await axios.delete(`http://localhost:5000/clients/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}` // Добавляем токен в заголовок
+        }
+      });
+      toast.success('Клиент успешно удален!');
+      setClients(clients.filter((client) => client.id !== id));
+    } catch (error) {
+      notifyError('Ошибка удаления клиента: ' + error.message);
+    }
   };
 
   // Сортировка и фильтрация
@@ -143,7 +165,7 @@ function Customers() {
     });
 
   return (
-    <div className="container my-4">
+    <div>
       <ToastContainer />
       <h1 className="mb-4">Список клиентов</h1>
       <div className="d-flex align-items-center mb-3">
@@ -154,7 +176,7 @@ function Customers() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Button variant="primary" onClick={() => handleShowModal()}>
+        <Button variant="btn btn-outline-secondary me-2" onClick={() => handleShowModal()}>
           Добавить клиента
         </Button>
         <button

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'react-i18next';
 import { FloatingLabel, Form, Button } from 'react-bootstrap';
+import 'react-toastify/dist/ReactToastify.css';
 
-function LoginPage({ onLogin, user  }) {
+function LoginPage({ onLogin }) {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -13,7 +13,6 @@ function LoginPage({ onLogin, user  }) {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
-    const { t } = useTranslation();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -30,19 +29,16 @@ function LoginPage({ onLogin, user  }) {
         axios
             .post('http://localhost:5000/login', formData)
             .then((response) => {
-                console.log('Вход успешен:', response.data);
-                toast.success('Вы успешно вошли!', { position: 'top-center' });
+                const { token } = response.data;
+                localStorage.setItem('userToken', token);
 
-                const { name, role } = response.data.user;
-                localStorage.setItem('userName', name);
-                localStorage.setItem('userRole', role);
+                toast.success('Вы успешно вошли!');
+                onLogin(true);  
 
-                onLogin(true);
-                user({ name, role });
                 navigate('/');
             })
             .catch((error) => {
-                toast.error('Ошибка входа. Проверьте данные!', { position: 'top-center' });
+                toast.error('Ошибка входа. Проверьте данные!');
                 setError(error.response?.data?.message || 'Неверный email или пароль');
             })
             .finally(() => {
@@ -56,7 +52,7 @@ function LoginPage({ onLogin, user  }) {
                 <div className="col-md-5">
                     <h2 className="text-center mb-4">Вход</h2>
                     <form onSubmit={handleSubmit}>
-                        <FloatingLabel controlId="floatingInput" label={t('form.email')} className="mb-3">
+                        <FloatingLabel controlId="floatingInput" label="Email" className="mb-3">
                             <Form.Control
                                 type="email"
                                 placeholder="name@example.com"
@@ -67,10 +63,10 @@ function LoginPage({ onLogin, user  }) {
                             />
                         </FloatingLabel>
 
-                        <FloatingLabel controlId="floatingPassword" label={t('form.password')} className="mb-3">
+                        <FloatingLabel controlId="floatingPassword" label="Пароль" className="mb-3">
                             <Form.Control
                                 type="password"
-                                placeholder={t('form.password')}
+                                placeholder="Пароль"
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
@@ -79,11 +75,11 @@ function LoginPage({ onLogin, user  }) {
                         </FloatingLabel>
 
                         <Button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
-                            {isLoading ? 'Загрузка...' : t('form.btnLogin')}
+                            {isLoading ? 'Загрузка...' : 'Войти'}
                         </Button>
                         <div className="mt-3 text-center">
-                            <span>{t('form.text')}</span>   
-                            <Link to="/register">{t('form.register')}</Link>
+                            <span>Нет аккаунта? </span>
+                            <Link to="/register">Зарегистрироваться</Link>
                         </div>
                     </form>
 

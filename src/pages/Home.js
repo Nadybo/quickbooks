@@ -7,6 +7,7 @@ import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import financeImage from './images/finance.jpg'
 import styled from 'styled-components';
+// import { Planner } from '../components/planner';
 
 function Home() {
   const { t } = useTranslation();
@@ -35,7 +36,10 @@ function Home() {
       </Tab>
 
       <Tab eventKey="planner" title={t('body.planner')}>
-        Tab content for planns
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold">Планировщик задач</h2>
+          {/* <Planner /> */}
+        </div>
       </Tab>
     </Tabs>
   );

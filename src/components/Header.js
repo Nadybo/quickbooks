@@ -2,11 +2,27 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import Modal from 'react-bootstrap/Modal';
-import { Button } from 'react-bootstrap'
+import { Button } from 'react-bootstrap';
+import { jwtDecode } from 'jwt-decode';
 
-const Navbar = ({ user, onLogout }) => {
+const Navbar = ({ onLogout }) => {
   const { t, i18n } = useTranslation();
   const [showModal, setShowModal] = useState(false);
+
+  // Функция для получения данных пользователя из токена
+  const getUserDataFromToken = () => {
+    const token = localStorage.getItem('userToken');
+    if (token) {
+      const decodedToken = jwtDecode(token);
+      return {
+        name: decodedToken.name,
+        role: decodedToken.role,
+      };
+    }
+    return { name: '', role: '' }; // Возвращаем пустые данные, если нет токена
+  };
+
+  const user = getUserDataFromToken(); // Получаем данные пользователя из токена
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
@@ -43,7 +59,7 @@ const Navbar = ({ user, onLogout }) => {
                 src="https://via.placeholder.com/40"
                 alt="User Avatar"
               />
-              <UserName></UserName>
+              <UserName>{user.name}</UserName>
             </Avatar>
           </RightSection>
         </NavbarContainer>
@@ -55,8 +71,8 @@ const Navbar = ({ user, onLogout }) => {
           <Modal.Title>{t('modal.userSettings')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-        <p>{t('modal.welcome', { name: user?.name })}</p>
-        <p>{t('modal.role', { role: user?.role })}</p>
+          <p>{"name: " + user.name}</p>
+          <p>{"role: " + user.role}</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="danger" onClick={onLogout}>
