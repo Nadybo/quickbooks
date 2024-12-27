@@ -36,6 +36,13 @@ function App() {
     setIsAuthenticated(false);
   };
 
+  window.addEventListener('beforeunload', () => {
+    const token = localStorage.getItem('userToken');
+    if (token) {
+        handleLogout(); // Вызов функции выхода
+    }
+});
+
   return (
     <Router>
       <div className="d-flex vh-100">

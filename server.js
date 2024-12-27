@@ -5,7 +5,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); 
 require('dotenv').config();
-const secretKey = process.env.SECRET_KEY; // Используйте переменные окружения для хранения секретов
+const secretKey = process.env.SECRET_KEY;
 
 const app = express();
 const port = 5000;
@@ -189,7 +189,7 @@ app.put('/clients/:id', authenticateToken, (req, res) => {
     });
 });
 
-// Удаление клиента с проверкой на user_id
+// Удаление клиента
 app.delete('/clients/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
     const userId = req.user.userId;
