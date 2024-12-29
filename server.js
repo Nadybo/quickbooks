@@ -211,26 +211,48 @@ app.delete('/clients/:id', authenticateToken, (req, res) => {
 
 app.get('/accounts', authenticateToken, (req, res) => {
     const userId = req.user.userId;
-  
-    const query = `SELECT * FROM Accounts WHERE user_id = ?`;
-  
-    db.query(query, [userId], (err, results) => {
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = parseInt(req.query.offset, 10) || 0;
+
+    const query = `
+        SELECT 
+            Accounts.id AS account_id,
+            Accounts.client_name,
+            Accounts.amount,
+            Accounts.status,
+            Accounts.description,
+            Accounts.created_at,
+            Accounts.updated_at,
+            Categories.id AS category_id,
+            Categories.name AS category_name
+        FROM Accounts
+        LEFT JOIN Categories ON Accounts.category_id = Categories.id
+        WHERE Accounts.user_id = ?
+        LIMIT ? OFFSET ?
+    `;
+
+    db.query(query, [userId, limit, offset], (err, results) => {
         if (err) {
-            console.error('Ошибка получения клиентов:', err);
+            console.error('Ошибка получения счетов:', err);
             return res.status(500).send({ message: 'Ошибка сервера.' });
         }
         res.send(results);
     });
 });
 
+
+
 // Добавление нового счета
 app.post('/accounts', authenticateToken, (req, res) => {
     const { client_name, amount, status, description, category_id } = req.body;
     const userId = req.user.userId;
 
-    // Проверяем обязательные поля
-    if (!client_name || !amount || !status || !category_id) {
-        return res.status(400).send({ message: 'Все обязательные поля должны быть заполнены.' });
+    if (isNaN(amount) || amount < 0) {
+        return res.status(400).send({ message: 'Сумма должна быть числом и больше или равна нулю.' });
+    }
+    
+    if (!['paid', 'unpaid'].includes(status)) {
+        return res.status(400).send({ message: 'Неверный статус. Допустимые значения: paid, unpaid.' });
     }
 
     const query = `
@@ -239,11 +261,10 @@ app.post('/accounts', authenticateToken, (req, res) => {
     `;
 
     db.query(query, [userId, client_name, amount, status, description, category_id], (err, result) => {
-        if (err) {
-            console.error('Ошибка добавления счета:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
+        if (!category_id) {
+            return res.status(400).send({ message: 'Категория является обязательным полем.' });
         }
-        // Отправляем ответ с добавленным счетом
+        
         res.status(201).send({
             id: result.insertId,
             user_id: userId,
@@ -263,7 +284,7 @@ app.delete('/accounts/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
     const userId = req.user.userId;
 
-    const query = `DELETE FROM Clients WHERE id = ? AND user_id = ?`;
+    const query = `DELETE FROM Accounts WHERE id = ? AND user_id = ?`;
 
     db.query(query, [id, userId], (err, result) => {
         if (err) {
@@ -271,10 +292,22 @@ app.delete('/accounts/:id', authenticateToken, (req, res) => {
             return res.status(500).send({ message: 'Ошибка сервера.' });
         }
         if (result.affectedRows === 0) {
-            return res.status(404).send({ message: 'Клиент не найден или у вас нет прав на удаление этого клиента.' });
-        }
+            return res.status(404).send({ message: 'Счет не найден или у вас нет прав на удаление этого счета.' });
+        }        
         res.send({ message: 'Клиент удален успешно!' });
     });
+});
+
+app.get('/categories', authenticateToken, (req, res) => {
+    const query = `SELECT id, name, description FROM categories`;
+db.query(query, (err, results) => {
+    if (err) {
+        console.error('Ошибка получения категорий:', err);
+        return res.status(500).send({ message: 'Ошибка сервера.' });
+    }
+    res.send(results);
+});
+
 });
 
 app.listen(port, () => {

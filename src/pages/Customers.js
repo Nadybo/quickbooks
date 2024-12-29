@@ -97,7 +97,7 @@ function Customers() {
 
   useEffect(() => {
     fetchClients();
-  }, ); 
+  }, []); 
   
   const deleteClient = async (id) => {
 
