@@ -1,47 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { FaTrash, FaEdit, FaSortAlphaDown, FaSortAlphaUp, FaFilter } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaSortAlphaDown, FaSortAlphaUp, FaUserPlus, FaFilter } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import { Modal, Button, Form } from "react-bootstrap";
 import 'react-toastify/dist/ReactToastify.css';
 import axios from "axios";
-
-// Стили таблицы и контейнера
-const StyledTableContainer = styled.div`
-  max-height: 680px;
-  overflow-y: auto;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-`;
-
-const StyledTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-
-  thead th {
-    position: sticky;
-    top: 0;
-    background: #f8f9fa;
-    z-index: 1;
-  }
-
-  tbody tr:nth-child(odd) {
-    background-color: #f9f9f9;
-  }
-  tbody tr:nth-child(even) {
-    background-color: #ffffff;
-  }
-`;
 
 function Customers() {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
   const [sortType, setSortType] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
-  const [showModal, setShowModal] = useState(false); // Для управления модальным окном
-  const [isEditMode, setIsEditMode] = useState(false); // Режим редактирования
-  const [selectedClient, setSelectedClient] = useState(null); // Выбранный клиент
+  const [showModal, setShowModal] = useState(false); 
+  const [isEditMode, setIsEditMode] = useState(false); 
+  const [selectedClient, setSelectedClient] = useState(null);
   const [clientData, setClientData] = useState({
     name: "",
     email: "",
@@ -125,9 +97,8 @@ function Customers() {
 
   useEffect(() => {
     fetchClients();
-  }, []); // Пустой массив зависимостей для вызова только при монтировании компонента
-
-  // Удаление клиента
+  }, ); 
+  
   const deleteClient = async (id) => {
 
     try {
@@ -167,8 +138,8 @@ function Customers() {
   return (
     <div>
       <ToastContainer />
-      <h1 className="mb-4">Список клиентов</h1>
-      <div className="d-flex align-items-center mb-3">
+      <h3 className="mb-4">Список клиентов</h3>
+      <SearchContainer>
         <input
           type="text"
           className="form-control me-3"
@@ -176,9 +147,9 @@ function Customers() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Button variant="btn btn-outline-secondary me-2" onClick={() => handleShowModal()}>
-          Добавить клиента
-        </Button>
+        <button className="btn btn-outline-secondary me-2"  onClick={() => handleShowModal()}>
+        <FaUserPlus />
+        </button>
         <button
           className="btn btn-outline-secondary me-2"
           onClick={() => {
@@ -197,7 +168,7 @@ function Customers() {
         >
           <FaFilter />
         </button>
-      </div>
+      </SearchContainer>
       <StyledTableContainer>
         <StyledTable className="table table-hover">
           <thead>
@@ -311,3 +282,38 @@ function Customers() {
 }
 
 export default Customers;
+
+// Стили таблицы и контейнера
+const StyledTableContainer = styled.div`
+  max-height: 680px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+`;
+
+const StyledTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 1;
+  }
+
+  tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+  }
+  tbody tr:nth-child(even) {
+    background-color: #ffffff;
+  }
+`;
+
+const SearchContainer = styled.div`
+ height: fit-content;
+ width: 60%;
+ display: flex;
+ margin-bottom: 20px;
+`;

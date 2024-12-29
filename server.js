@@ -17,7 +17,7 @@ const db = mysql.createConnection({
     host: '127.0.0.1', 
     user: 'root',      
     password: 'root', 
-    database: 'quickbooks2',
+    database: 'falite',
 });
 
 db.connect((err) => {
@@ -48,9 +48,9 @@ function authenticateToken(req, res, next) {
 
 // Регистрация пользователя
 app.post('/register', async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password} = req.body;
 
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password) {
         return res.status(400).send({ message: 'Все поля обязательны.' });
     }
 
@@ -69,8 +69,8 @@ app.post('/register', async (req, res) => {
 
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            const query = 'INSERT INTO Users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, NOW())';
-            db.query(query, [name, email, hashedPassword, role], (err, results) => {
+            const query = 'INSERT INTO Users (name, email, password, created_at) VALUES (?, ?, ?, NOW())';
+            db.query(query, [name, email, hashedPassword], (err, results) => {
                 if (err) {
                     console.error(err);
                     return res.status(500).send({ message: 'Ошибка сервера.' });
@@ -207,6 +207,57 @@ app.delete('/clients/:id', authenticateToken, (req, res) => {
         res.send({ message: 'Клиент удален успешно!' });
     });
 });
+
+
+app.get('/accounts', authenticateToken, (req, res) => {
+    const userId = req.user.userId;
+  
+    const query = `SELECT * FROM Accounts WHERE user_id = ?`;
+  
+    db.query(query, [userId], (err, results) => {
+        if (err) {
+            console.error('Ошибка получения клиентов:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        res.send(results);
+    });
+});
+
+// Добавление нового счета
+app.post('/accounts', authenticateToken, (req, res) => {
+    const { client_name, amount, status, description, category_id } = req.body;
+    const userId = req.user.userId;  // Получаем userId из токена
+
+    // Проверяем обязательные поля
+    if (!client_name || !amount || !status || !category_id) {
+        return res.status(400).send({ message: 'Все обязательные поля должны быть заполнены.' });
+    }
+
+    const query = `
+        INSERT INTO accounts (user_id, client_name, amount, status, description, category_id, created_at, epdate_at)
+        VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+    `;
+
+    db.query(query, [userId, client_name, amount, status, description, category_id], (err, result) => {
+        if (err) {
+            console.error('Ошибка добавления счета:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        // Отправляем ответ с добавленным счетом
+        res.status(201).send({
+            id: result.insertId,
+            user_id: userId,
+            client_name,
+            amount,
+            status,
+            description,
+            category_id,
+            created_at: new Date(),
+            epdate_at: new Date()
+        });
+    });
+});
+
 
 app.listen(port, () => {
     console.log(`Сервер запущен на порту ${port}`);

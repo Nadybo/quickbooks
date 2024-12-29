@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FloatingLabel, Form, Button } from 'react-bootstrap';
-import { toast } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function RegisterForm() {
@@ -11,7 +11,6 @@ function RegisterForm() {
         name: '',
         email: '',
         password: '',
-        role: 'user',
     });
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -45,6 +44,7 @@ function RegisterForm() {
 
     return (
         <div className="container mt-5">
+            <ToastContainer />
     <div className="row justify-content-center">
         <div className="col-md-6">
             <h2 className="text-center mb-4">Регистрация</h2>
@@ -80,18 +80,6 @@ function RegisterForm() {
                         onChange={handleChange}
                         required
                     />
-                </FloatingLabel>
-
-                <FloatingLabel label="Роль" className="mb-3">
-                    <Form.Select
-                        id="role"
-                        name="role"
-                        value={formData.role}
-                        onChange={handleChange}
-                    >
-                        <option value="user">Пользователь</option>
-                        <option value="admin">Администратор</option>
-                    </Form.Select>
                 </FloatingLabel>
 
                 <Button type="submit" className="btn btn-primary w-100">

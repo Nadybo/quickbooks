@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { toast } from 'react-toastify';
 import { FloatingLabel, Form, Button } from 'react-bootstrap';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function LoginPage({ onLogin }) {
@@ -48,6 +48,7 @@ function LoginPage({ onLogin }) {
 
     return (
         <div className="container mt-5">
+            <ToastContainer />
             <div className="row justify-content-center">
                 <div className="col-md-5">
                     <h2 className="text-center mb-4">Вход</h2>

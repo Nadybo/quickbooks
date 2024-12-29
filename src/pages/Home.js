@@ -12,36 +12,25 @@ import styled from 'styled-components';
 function Home() {
   const { t } = useTranslation();
   return (
-    <Tabs>
-      <Tab eventKey="home" title={t('body.home')} >
-      <ScrollableContainer>
-      <Row xs={1} md={2} className="g-4">
-        {Array.from({ length: 8 }).map((_, idx) => (
-          <Col key={idx}>
-            <Card>
-              <Card.Img variant="top" src={financeImage} />
-              <Card.Body>
-                <Card.Title>Card title</Card.Title>
-                <Card.Text>
-                  This is a longer card with supporting text below as a natural
-                  lead-in to additional content. This content is a little bit
-                  longer.
-                </Card.Text>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-        </Row>
-      </ScrollableContainer>
-      </Tab>
-
-      <Tab eventKey="planner" title={t('body.planner')}>
-        <div className="space-y-6">
-          <h2 className="text-3xl font-bold">Планировщик задач</h2>
-          {/* <Planner /> */}
-        </div>
-      </Tab>
-    </Tabs>
+    <ScrollableContainer>
+    <Row xs={1} md={2} className="g-4">
+      {Array.from({ length: 8 }).map((_, idx) => (
+        <Col key={idx}>
+          <Card>
+            <Card.Img variant="top" src={financeImage} />
+            <Card.Body>
+              <Card.Title>Card title</Card.Title>
+              <Card.Text>
+                This is a longer card with supporting text below as a natural
+                lead-in to additional content. This content is a little bit
+                longer.
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+      ))}
+      </Row>
+    </ScrollableContainer>
   );
 }
 
