@@ -226,7 +226,7 @@ app.get('/accounts', authenticateToken, (req, res) => {
 // Добавление нового счета
 app.post('/accounts', authenticateToken, (req, res) => {
     const { client_name, amount, status, description, category_id } = req.body;
-    const userId = req.user.userId;  // Получаем userId из токена
+    const userId = req.user.userId;
 
     // Проверяем обязательные поля
     if (!client_name || !amount || !status || !category_id) {
@@ -234,7 +234,7 @@ app.post('/accounts', authenticateToken, (req, res) => {
     }
 
     const query = `
-        INSERT INTO accounts (user_id, client_name, amount, status, description, category_id, created_at, epdate_at)
+        INSERT INTO accounts (user_id, client_name, amount, status, description, category_id, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
@@ -253,11 +253,29 @@ app.post('/accounts', authenticateToken, (req, res) => {
             description,
             category_id,
             created_at: new Date(),
-            epdate_at: new Date()
+            updated_at: new Date()
         });
     });
 });
 
+// Удаление счета
+app.delete('/accounts/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    const query = `DELETE FROM Clients WHERE id = ? AND user_id = ?`;
+
+    db.query(query, [id, userId], (err, result) => {
+        if (err) {
+            console.error('Ошибка удаления клиента:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).send({ message: 'Клиент не найден или у вас нет прав на удаление этого клиента.' });
+        }
+        res.send({ message: 'Клиент удален успешно!' });
+    });
+});
 
 app.listen(port, () => {
     console.log(`Сервер запущен на порту ${port}`);
