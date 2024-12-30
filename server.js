@@ -298,6 +298,44 @@ app.delete('/accounts/:id', authenticateToken, (req, res) => {
     });
 });
 
+// Обновление записи в таблице accounts
+app.put("/accounts/:id", async (req, res) => {
+    const { id } = req.params;
+    const { client_name, amount, status, description, category_id } = req.body;
+  
+    // Валидация данных
+    if (!amount || !status || !category_id) {
+      return res.status(400).json({ error: "Поля amount, status и category_id обязательны." });
+    }
+  
+    try {
+      const query = `
+        UPDATE accounts 
+        SET 
+          client_name = ?, 
+          amount = ?, 
+          status = ?, 
+          description = ?, 
+          category_id = ?, 
+          updated_at = NOW() 
+        WHERE id = ?`;
+  
+      const values = [client_name, amount, status, description, category_id, id];
+  
+      const result = await db.execute(query, values);  // No destructuring needed
+  
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Запись не найдена." });
+      }
+  
+      res.status(200).json({ message: "Запись успешно обновлена." });
+    } catch (error) {
+      console.error("Ошибка обновления записи:", error);
+      res.status(500).json({ error: "Ошибка на сервере." });
+    }
+});
+
+
 app.get('/categories', authenticateToken, (req, res) => {
     const query = `SELECT id, name, description FROM categories`;
 db.query(query, (err, results) => {

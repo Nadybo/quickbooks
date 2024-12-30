@@ -204,6 +204,11 @@ function Accounts() {
 
 export default Accounts;
 
+const statusMapping = {
+  paid: "Оплачено",
+  unpaid: "Не оплачено",
+};
+
 // Компоненты таблицы и модального окна
 const AccountsTable = ({ accounts, onEdit, onDelete }) => (
   <StyledTable className="table table-hover">
@@ -223,7 +228,7 @@ const AccountsTable = ({ accounts, onEdit, onDelete }) => (
         <tr key={account.account_id}>
           <td>{account.client_name}</td>
           <td>{account.amount}</td>
-          <td>{account.status}</td>
+          <td>{statusMapping[account.status] || account.status}</td>
           <td>{account.description}</td>
           <td>{account.category_name}</td>
           <td>{new Date(account.created_at).toLocaleDateString()}</td>
