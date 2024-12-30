@@ -115,7 +115,7 @@ app.post('/login', (req, res) => {
                 return res.status(401).send({ message: 'Неверный email или пароль.' });
             }
 
-            const token = jwt.sign({ userId: user.id, role: user.role, name: user.name, email: user.email }, secretKey, { expiresIn: '1h' });
+            const token = jwt.sign({ userId: user.id, role: user.role, name: user.name, email: user.email }, secretKey, { expiresIn: '24h' });
 
             res.send({
                 message: 'Вход успешен!',

@@ -74,7 +74,6 @@ const Navbar = ({ onLogout }) => {
         </Modal.Header>
         <Modal.Body>
           <p>{"name: " + user.name}</p>
-          <p>{"role: " + user.role}</p>
           <p>{"email: " + user.email}</p>
         </Modal.Body>
         <Modal.Footer>

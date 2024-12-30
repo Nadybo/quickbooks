@@ -147,11 +147,11 @@ function Customers() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="btn btn-outline-secondary me-2"  onClick={() => handleShowModal()}>
+        <button className="btn btn-outline-success me-2"  onClick={() => handleShowModal()}>
         <FaUserPlus />
         </button>
         <button
-          className="btn btn-outline-secondary me-2"
+          className="btn btn-outline-success me-2"
           onClick={() => {
             setSortType('name');
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -160,7 +160,7 @@ function Customers() {
           {sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
         </button>
         <button
-          className="btn btn-outline-secondary"
+          className="btn btn-outline-success me-2"
           onClick={() => {
             setSortType('date');
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
