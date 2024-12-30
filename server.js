@@ -211,8 +211,6 @@ app.delete('/clients/:id', authenticateToken, (req, res) => {
 
 app.get('/accounts', authenticateToken, (req, res) => {
     const userId = req.user.userId;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const offset = parseInt(req.query.offset, 10) || 0;
 
     const query = `
         SELECT 
@@ -228,10 +226,9 @@ app.get('/accounts', authenticateToken, (req, res) => {
         FROM Accounts
         LEFT JOIN Categories ON Accounts.category_id = Categories.id
         WHERE Accounts.user_id = ?
-        LIMIT ? OFFSET ?
     `;
 
-    db.query(query, [userId, limit, offset], (err, results) => {
+    db.query(query, [userId], (err, results) => {
         if (err) {
             console.error('Ошибка получения счетов:', err);
             return res.status(500).send({ message: 'Ошибка сервера.' });

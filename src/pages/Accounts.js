@@ -298,7 +298,7 @@ const AccountModal = ({ show, onHide, accountData, clients, categories, onChange
         <Form.Group className="mb-3">
           <Form.Label>Описание</Form.Label>
           <Form.Control
-            type="text"
+            type="textarea"
             name="description"
             placeholder="Введите описание"
             value={accountData.description}
