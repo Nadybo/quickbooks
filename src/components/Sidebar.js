@@ -46,17 +46,38 @@ const Sidebar = () => {
               </StyledLink>
               <StyledLink
                 className="nav-link"
-                to="/reports"
-                aria-current={location.pathname === '/reports' ? 'page' : undefined}
-              >
-                {t('sidebar.reports')}
-              </StyledLink>
-              <StyledLink
-                className="nav-link"
                 to="/customers"
                 aria-current={location.pathname === '/customers' ? 'page' : undefined}
               >
                 {t('sidebar.customers')}
+              </StyledLink>
+              {/* <StyledLink
+                className="nav-link"
+                to="/invoices"
+                aria-current={location.pathname === '/invoices' ? 'page' : undefined}
+              >
+                {t('sidebar.invoices')}
+              </StyledLink>
+              <StyledLink
+                className="nav-link"
+                to="/payments"
+                aria-current={location.pathname === '/payments' ? 'page' : undefined}
+              >
+                {t('sidebar.payments')}
+              </StyledLink> */}
+              <StyledLink
+                className="nav-link"
+                to="/categories"
+                aria-current={location.pathname === '/categories' ? 'page' : undefined}
+              >
+                {t('sidebar.categories')}
+              </StyledLink>
+              <StyledLink
+                className="nav-link"
+                to="/reports"
+                aria-current={location.pathname === '/reports' ? 'page' : undefined}
+              >
+                {t('sidebar.reports')}
               </StyledLink>
             </Stack>
           </Container>

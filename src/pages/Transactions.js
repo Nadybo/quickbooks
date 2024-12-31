@@ -14,6 +14,7 @@ function Transactions() {
   const [search, setSearch] = useState('');
   const [sortType, setSortType] = useState('client_name');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [clients, setClients] = useState([]);
   const token = localStorage.getItem("userToken");
   const [statusFilter, setStatusFilter] = useState("paid"); // Default filter to "paid"
 
@@ -46,19 +47,22 @@ function Transactions() {
     return accounts.filter((account) => account.status === status);
   };
 
-  const filteredAccounts = filterByStatus(
-    filterAndSortAccounts(accounts, search, sortType, sortOrder),
-    statusFilter
-  );
-
-  const handleSort = (type) => {
-    if (sortType === type) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortType(type);
-      setSortOrder("asc");
+  const fetchAllData = async () => {
+    try {
+      const [accountsResponse, clientsResponse] = await Promise.all([
+        apiRequest('http://localhost:5000/accounts'),
+        apiRequest('http://localhost:5000/clients')
+      ]);
+      setAccounts(accountsResponse.data);
+      setClients(clientsResponse.data);
+    } catch (error) {
+      toast.error('Ошибка загрузки данных: ' + error.message);
     }
   };
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
 
   const apiRequest = (url, method = 'GET', data = null) => {
     const config = {
@@ -70,20 +74,28 @@ function Transactions() {
     return axios(config);
   };
 
-  const fetchAllData = async () => {
-    try {
-      const [accountsResponse] = await Promise.all([
-        apiRequest('http://localhost:5000/accounts'),
-      ]);
-      setAccounts(accountsResponse.data);
-    } catch (error) {
-      toast.error('Ошибка загрузки данных: ' + error.message);
+  // Добавление имени клиента в объект account
+  const updatedAccounts = accounts.map(account => {
+    const client = clients.find(client => client.id === account.client_id);
+    return {
+      ...account,
+      client_name: client ? client.name : 'Неизвестен', // Если клиента нет, ставим 'Неизвестен'
+    };
+  });
+
+  const filteredAccounts = filterByStatus(
+    filterAndSortAccounts(updatedAccounts, search, sortType, sortOrder),
+    statusFilter
+  );
+
+  const handleSort = (type) => {
+    if (sortType === type) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortType(type);
+      setSortOrder("asc");
     }
   };
-
-  useEffect(() => {
-    fetchAllData();
-  }, []);
 
   const exportToCSV = () => {
     const csvData = Papa.unparse(filteredAccounts);
@@ -105,9 +117,7 @@ function Transactions() {
     const doc = new jsPDF();
     
     doc.setFont("helvetica", "14"); 
-  
     doc.text('Список оплаченных счетов', 20, 10);
-  
     let yPosition = 20;
   
     filteredAccounts.forEach((account, index) => {
@@ -131,48 +141,48 @@ function Transactions() {
           onChange={(e) => setSearch(e.target.value)}
         />
         <ButtonsGroup>
-        <button
-          className="btn btn-outline-success me-2"
-          onClick={() => {
-            setSortType('client_name');
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-          }}
-        >
-          {sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
-        </button>
-        <button
-          className="btn btn-outline-success me-2"
-          onClick={() => {
-            setSortType('date');
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-          }}
-        >
-          <FaFilter />
-        </button>
-        <button
-          className="btn btn-outline-success me-2"
-          onClick={exportToCSV}
-        >
-          <FaFileCsv />
-        </button>
-        <button
-          className="btn btn-outline-success me-2"
-          onClick={exportToXLSX}
-        >
-          <FaFileExcel />
-        </button>
-        <button className="btn btn-outline-success me-2" onClick={exportToPDF}>
-          <FaFilePdf />
-        </button>
+          <button
+            className="btn btn-outline-success me-2"
+            onClick={() => {
+              setSortType('client_name');
+              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+            }}
+          >
+            {sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
+          </button>
+          <button
+            className="btn btn-outline-success me-2"
+            onClick={() => {
+              setSortType('date');
+              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+            }}
+          >
+            <FaFilter />
+          </button>
+          <button
+            className="btn btn-outline-success me-2"
+            onClick={exportToCSV}
+          >
+            <FaFileCsv />
+          </button>
+          <button
+            className="btn btn-outline-success me-2"
+            onClick={exportToXLSX}
+          >
+            <FaFileExcel />
+          </button>
+          <button className="btn btn-outline-success me-2" onClick={exportToPDF}>
+            <FaFilePdf />
+          </button>
         </ButtonsGroup>
       </SearchContainer>
       <StyledTableContainer>
-      <AccountsTable
-        accounts={filteredAccounts}
-        onSort={handleSort}
-        sortType={sortType}
-        sortOrder={sortOrder}
-      />
+        <AccountsTable
+          accounts={filteredAccounts}
+          onSort={handleSort}
+          sortType={sortType}
+          sortOrder={sortOrder}
+        />
       </StyledTableContainer>
     </div>
   );
@@ -188,25 +198,23 @@ const statusMapping = {
 const AccountsTable = ({ accounts, onSort, sortType, sortOrder }) => (
   <StyledTable className="table table-hover">
     <thead>
-          <tr>
-            <th onClick={() => onSort('client_name')} style={{ cursor: 'pointer' }}>
-              Имя клиента {sortType === 'client_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
-            </th>
-            <th onClick={() => onSort('amount')} style={{ cursor: 'pointer' }}>
-              Сумма {sortType === 'amount' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
-            </th>
-            <th>
-              Статус
-            </th>
-            <th>Описание</th>
-            <th onClick={() => onSort('category_name')} style={{ cursor: 'pointer' }}>
-              Категория {sortType === 'category_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
-            </th>
-            <th onClick={() => onSort('date')} style={{ cursor: 'pointer' }}>
-              Дата создания {sortType === 'date' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
-            </th>
-          </tr>
-        </thead>
+      <tr>
+        <th onClick={() => onSort('client_name')} style={{ cursor: 'pointer' }}>
+          Имя клиента {sortType === 'client_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        </th>
+        <th onClick={() => onSort('amount')} style={{ cursor: 'pointer' }}>
+          Сумма {sortType === 'amount' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        </th>
+        <th>Статус</th>
+        <th>Описание</th>
+        <th onClick={() => onSort('category_name')} style={{ cursor: 'pointer' }}>
+          Категория {sortType === 'category_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        </th>
+        <th onClick={() => onSort('date')} style={{ cursor: 'pointer' }}>
+          Дата создания {sortType === 'date' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        </th>
+      </tr>
+    </thead>
     <tbody>
       {accounts.map((account) => (
         <tr key={account.account_id}>

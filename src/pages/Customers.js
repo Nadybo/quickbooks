@@ -17,6 +17,7 @@ function Customers() {
   const [clientData, setClientData] = useState({
     name: "",
     email: "",
+    company_name: "",
     phone: "",
     address: "",
     type: "client",
@@ -32,6 +33,7 @@ function Customers() {
         email: "",
         phone: "",
         address: "",
+        company_name: "",
         type: "client",
       }
     );
@@ -180,22 +182,16 @@ function Customers() {
                 Имя {sortType === 'name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
               </th>
               <th onClick={() => {
-                setSortType('email');
+                setSortType('company_name');
                 setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
               }}>
-                Почта {sortType === 'email' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+                Компания {sortType === 'company_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
               </th>
               <th onClick={() => {
                 setSortType('phone');
                 setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
               }}>
                 Телефон {sortType === 'phone' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
-              </th>
-              <th onClick={() => {
-                setSortType('type');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}>
-                Тип {sortType === 'type' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
               </th>
               <th onClick={() => {
                 setSortType('date');
@@ -210,9 +206,8 @@ function Customers() {
             {filteredClients.map((client) => (
               <tr key={client.id}>
                 <td>{client.name}</td>
-                <td>{client.email}</td>
+                <td>{client.company_name}</td>
                 <td>{client.phone}</td>
-                <td>{client.type}</td>
                 <td>{new Date(client.created_at).toLocaleDateString()}</td>
                 <td>
                 <Dropdown>
@@ -292,6 +287,16 @@ function Customers() {
                   <option value="client">Клиент</option>
                   <option value="supplier">Поставщик</option>
                 </Form.Select>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Названия компания</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="company_name"
+                  placeholder="Введите названия компания"
+                  value={clientData.company_name}
+                  onChange={handleInputChange}
+                />
               </Form.Group>
             </Form>
           </Modal.Body>

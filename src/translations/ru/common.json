@@ -11,7 +11,10 @@
       "transactions": "Транзакции",
       "accounts":"Счета",
       "reports" : "Отчеты",
-      "customers" : "Клиенты"
+      "customers" : "Клиенты",
+      "categories" :"Категории",
+      "payments" : "Платежи",
+      "invoices" : "Cчета-фактуры"
     },
     "form":{
       "register":"Зарегистрировать",

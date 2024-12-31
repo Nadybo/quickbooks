@@ -151,33 +151,48 @@ app.get('/clients', authenticateToken, (req, res) => {
 
 // Добавление нового клиента с user_id
 app.post('/clients', authenticateToken, (req, res) => {
-    const { name, email, phone, address, type } = req.body;
+    const { name, email, phone, address, type, company_name } = req.body;
     const userId = req.user.userId;  // Получаем userId из токена
 
     if (!name || !type) {
         return res.status(400).send({ message: 'Имя и тип клиента обязательны.' });
     }
 
-    const query = `INSERT INTO Clients (name, email, phone, address, type, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())`;
+    const query = `INSERT INTO Clients (name, email, phone, address, type, user_id, company_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`;
 
-    db.query(query, [name, email, phone, address, type, userId], (err, result) => {
+    db.query(query, [name, email, phone, address, type, userId, company_name], (err, result) => {
         if (err) {
             console.error('Ошибка добавления клиента:', err);
             return res.status(500).send({ message: 'Ошибка сервера.' });
         }
-        res.status(201).send({ id: result.insertId, name, email, phone, address, type });
+    
+        if (result && result.insertId) {
+            res.status(201).send({
+                id: result.insertId,
+                name,
+                email,
+                phone,
+                address,
+                type,
+                company_name
+            });
+        } else {
+            console.error('Ошибка: результат не содержит insertId.');
+            res.status(500).send({ message: 'Ошибка сервера при добавлении клиента.' });
+        }
     });
+    
 });
 
 // Обновление клиента с проверкой на user_id
 app.put('/clients/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
-    const { name, email, phone, address, type } = req.body;
+    const { name, email, phone, address, type, company_name } = req.body;
     const userId = req.user.userId;
 
-    const query = `UPDATE Clients SET name = ?, email = ?, phone = ?, address = ?, type = ?, updated_at = NOW() WHERE id = ? AND user_id = ?`;
+    const query = `UPDATE Clients SET name = ?, email = ?, phone = ?, address = ?, type = ?, company_name = ?, updated_at = NOW() WHERE id = ? AND user_id = ?`;
 
-    db.query(query, [name, email, phone, address, type, id, userId], (err, result) => {
+    db.query(query, [name, email, phone, address, type, id, userId, company_name], (err, result) => {
         if (err) {
             console.error('Ошибка обновления клиента:', err);
             return res.status(500).send({ message: 'Ошибка сервера.' });
@@ -215,7 +230,7 @@ app.get('/accounts', authenticateToken, (req, res) => {
     const query = `
         SELECT 
             Accounts.id AS account_id,
-            Accounts.client_name,
+            Accounts.client_id,
             Accounts.amount,
             Accounts.status,
             Accounts.description,
@@ -225,6 +240,7 @@ app.get('/accounts', authenticateToken, (req, res) => {
             Categories.name AS category_name
         FROM Accounts
         LEFT JOIN Categories ON Accounts.category_id = Categories.id
+        LEFT JOIN Clients ON Accounts.client_id = Clients.id
         WHERE Accounts.user_id = ?
     `;
 
@@ -241,40 +257,60 @@ app.get('/accounts', authenticateToken, (req, res) => {
 
 // Добавление нового счета
 app.post('/accounts', authenticateToken, (req, res) => {
-    const { client_name, amount, status, description, category_id } = req.body;
+    const { client_id, amount, status, description, category_id } = req.body;
     const userId = req.user.userId;
 
+    // Validate client_id
+    if (!client_id || isNaN(client_id) || client_id <= 0) {
+        return res.status(400).send({ message: 'Неверный client_id. Он должен быть положительным числом.' });
+    }
+
+    // Validate amount
     if (isNaN(amount) || amount < 0) {
         return res.status(400).send({ message: 'Сумма должна быть числом и больше или равна нулю.' });
     }
-    
+
+    // Validate status
     if (!['paid', 'unpaid'].includes(status)) {
         return res.status(400).send({ message: 'Неверный статус. Допустимые значения: paid, unpaid.' });
     }
 
+    // Validate category_id
+    if (!category_id) {
+        return res.status(400).send({ message: 'Категория является обязательным полем.' });
+    }
+
     const query = `
-        INSERT INTO accounts (user_id, client_name, amount, status, description, category_id, created_at, updated_at)
+        INSERT INTO accounts (user_id, client_id, amount, status, description, category_id, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
-    db.query(query, [userId, client_name, amount, status, description, category_id], (err, result) => {
-        if (!category_id) {
-            return res.status(400).send({ message: 'Категория является обязательным полем.' });
+    db.query(query, [userId, client_id, amount, status, description, category_id], (err, result) => {
+        if (err) {
+            console.error('Ошибка при добавлении счета:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
         }
-        
-        res.status(201).send({
-            id: result.insertId,
-            user_id: userId,
-            client_name,
-            amount,
-            status,
-            description,
-            category_id,
-            created_at: new Date(),
-            updated_at: new Date()
-        });
+
+        if (result && result.insertId) {
+            res.status(201).send({
+                id: result.insertId,
+                user_id: userId,
+                client_id,
+                amount,
+                status,
+                description,
+                category_id,
+                created_at: new Date(),
+                updated_at: new Date()
+            });
+        } else {
+            console.error('Ошибка: результат не содержит insertId.');
+            res.status(500).send({ message: 'Ошибка при добавлении счета.' });
+        }
     });
 });
+
+
 
 // Удаление счета
 app.delete('/accounts/:id', authenticateToken, (req, res) => {
@@ -298,7 +334,7 @@ app.delete('/accounts/:id', authenticateToken, (req, res) => {
 // Обновление записи в таблице accounts
 app.put("/accounts/:id", async (req, res) => {
     const { id } = req.params;
-    const { client_name, amount, status, description, category_id } = req.body;
+    const { client_id, amount, status, description, category_id } = req.body;
   
     // Валидация данных
     if (!amount || !status || !category_id) {
@@ -309,7 +345,7 @@ app.put("/accounts/:id", async (req, res) => {
       const query = `
         UPDATE accounts 
         SET 
-          client_name = ?, 
+          client_id = ?, 
           amount = ?, 
           status = ?, 
           description = ?, 
@@ -317,7 +353,7 @@ app.put("/accounts/:id", async (req, res) => {
           updated_at = NOW() 
         WHERE id = ?`;
   
-      const values = [client_name, amount, status, description, category_id, id];
+      const values = [client_id, amount, status, description, category_id, id];
   
       const result = await db.execute(query, values);  // No destructuring needed
   
@@ -334,7 +370,7 @@ app.put("/accounts/:id", async (req, res) => {
 
 
 app.get('/categories', authenticateToken, (req, res) => {
-    const query = `SELECT id, name, description FROM categories`;
+    const query = `SELECT * FROM categories`;
 db.query(query, (err, results) => {
     if (err) {
         console.error('Ошибка получения категорий:', err);
@@ -342,8 +378,60 @@ db.query(query, (err, results) => {
     }
     res.send(results);
 });
-
 });
+
+app.post('/categories', authenticateToken, (req, res) => {
+    const { name, description } = req.body;
+
+    const query = `
+        INSERT INTO categories (name, description)
+        VALUES (?, ?)
+    `;
+
+    db.query(query, [ name, description], (err, result) => {
+        if (err) {
+            console.error('Ошибка добавления категории:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        res.send({ message: 'Категория успешно добавлена.', categoryId: result.insertId });
+    });
+});
+
+app.put('/categories/:id', authenticateToken, (req, res) => {
+    const categoryId = req.params.id;
+    const { name, description } = req.body;
+
+    const query = `
+        UPDATE categories 
+        SET name = ?, description = ?
+        WHERE id = ?
+    `;
+
+    db.query(query, [name, description, categoryId], (err, result) => {
+        if (err) {
+            console.error('Ошибка обновления категории:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        res.send({ message: 'Категория успешно обновлена.' });
+    });
+});
+
+app.delete('/categories/:id', authenticateToken, (req, res) => {
+    const categoryId = req.params.id;
+
+    const query = `
+        DELETE FROM categories WHERE id = ?
+    `;
+
+    db.query(query, [categoryId], (err, result) => {
+        if (err) {
+            console.error('Ошибка удаления категории:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        res.send({ message: 'Категория успешно удалена.' });
+    });
+});
+
 
 app.get('/users', authenticateToken, (req, res) => {
     const userId = req.user.userId;  // Получаем userId из токена

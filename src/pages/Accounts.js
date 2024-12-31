@@ -20,7 +20,7 @@ function Accounts() {
   const token = localStorage.getItem("userToken"); 
 
   const initialAccountData = {
-    client_name: "",
+    client_id: "",
     amount: "",
     status: "",
     description: "",
@@ -55,21 +55,28 @@ function Accounts() {
         apiRequest('http://localhost:5000/clients'),
         apiRequest('http://localhost:5000/accounts'),
       ]);
+      
       const categoriesMap = Object.fromEntries(
         categoriesResponse.data.map((category) => [category.id, category.name])
       );
+      const clientsMap = Object.fromEntries(
+        clientsResponse.data.map((client) => [client.id, client.name])
+      );
+      
       setCategories(categoriesResponse.data);
-      setClients(clientsResponse.data);
+      setClients(clientsResponse.data); // Ensure it's an array
       setAccounts(
         accountsResponse.data.map((account) => ({
           ...account,
           category_name: categoriesMap[account.category_id] || 'Неизвестно',
+          client_name: clientsMap[account.client_id] || 'Неизвестно',
         }))
       );
     } catch (error) {
       toast.error('Ошибка загрузки данных: ' + error.message);
     }
   };
+  
   
 
   useEffect(() => {
@@ -83,27 +90,30 @@ function Accounts() {
   };
 
   const handleClientChange = (e) => {
-    const selectedClientName = e.target.value;
-    const selectedClient = clients.find(client => client.name === selectedClientName);
+    const selectedClientId = e.target.value;  // Получаем id выбранного клиента
+    console.log('Selected Client:', selectedClientId);
     setAccountData({
       ...accountData,
-      client_name: selectedClientName,
-      client_id: selectedClient?.id || '',
+      client_id: selectedClientId,  // Обновляем client_id в состоянии
     });
   };
+  
 
   // Сохранение
   const saveAccount = async () => {
     const payload = {
       ...accountData,
       category_id: parseInt(accountData.category_id, 10),
+      client_id: accountData.client_id,
     };
     const url = isEditMode
       ? `http://localhost:5000/accounts/${selectedAccount.account_id}`
       : 'http://localhost:5000/accounts';
     const method = isEditMode ? 'PUT' : 'POST';
+    console.log('Payload:', payload);
     await apiRequest(url, method, payload);
   };
+  
 
   const handleSaveAccount = async () => {
     try {
@@ -317,21 +327,21 @@ const AccountModal = ({ show, onHide, accountData, clients, categories, onChange
     </Modal.Header>
     <Modal.Body>
       <Form>
-        <Form.Group className="mb-3">
-          <Form.Label>Имя клиента</Form.Label>
-          <Form.Select
-            name="client_name"
-            value={accountData.client_name}
-            onChange={onClientChange}
-          >
-            <option value="">Выберите клиента</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.name}>
-                {client.name}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
+          <Form.Group className="mb-3">
+        <Form.Label>Имя клиента</Form.Label>
+        <Form.Select
+          name="client_id"  // Используем client_id для связывания
+          value={accountData.client_id}  // Привязываем к состоянию
+          onChange={onClientChange}  // Обработчик изменения для клиента
+        >
+          <option value="">Выберите клиента</option>
+          {clients.map((client) => (
+            <option key={client.id} value={client.id}> {/* value - client.id */}
+              {client.name}  {/* Отображаем имя клиента */}
+            </option>
+          ))}
+        </Form.Select>
+      </Form.Group>
         <Form.Group className="mb-3">
           <Form.Label>Сумма</Form.Label>
           <Form.Control

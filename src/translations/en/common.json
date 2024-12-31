@@ -11,7 +11,10 @@
     "transactions": "Transactions",
     "accounts":"Accounts",
     "reports" : "Reports",
-    "customers" : "customers"
+    "customers" : "Customers",
+    "categories" : "Categories",
+    "payments" : "Payments",
+    "invoices" : "invoices"
   },
   "form":{
       "register":"Register",
