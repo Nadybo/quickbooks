@@ -273,7 +273,7 @@ const AccountsTable = ({ accounts, onEdit, onDelete, onSort, sortType, sortOrder
       {accounts.map((account) => (
         <tr key={account.account_id}>
           <td>{account.client_name}</td>
-          <td>{account.amount}</td>
+          <td>{account.amount} ₽</td>
           <td
             style={{
               backgroundColor: account.status === "paid" ? "green" : "transparent",

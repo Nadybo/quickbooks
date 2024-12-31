@@ -211,7 +211,7 @@ const AccountsTable = ({ accounts, onSort, sortType, sortOrder }) => (
       {accounts.map((account) => (
         <tr key={account.account_id}>
           <td>{account.client_name}</td>
-          <td>{account.amount}</td>
+          <td>{account.amount} ₽</td>
           <td>{statusMapping[account.status] || account.status}</td>
           <td>{account.description}</td>
           <td>{account.category_name}</td>
