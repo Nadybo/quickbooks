@@ -115,7 +115,7 @@ app.post('/login', (req, res) => {
                 return res.status(401).send({ message: 'Неверный email или пароль.' });
             }
 
-            const token = jwt.sign({ userId: user.id, role: user.role, name: user.name, email: user.email }, secretKey, { expiresIn: '24h' });
+            const token = jwt.sign({ userId: user.id, name: user.name, email: user.email }, secretKey, { expiresIn: '24h' });
 
             res.send({
                 message: 'Вход успешен!',
@@ -344,6 +344,37 @@ db.query(query, (err, results) => {
 });
 
 });
+
+app.get('/users', authenticateToken, (req, res) => {
+    const userId = req.user.userId;  // Получаем userId из токена
+
+    const query = `SELECT * FROM users WHERE id = ?`;
+
+    db.query(query, [userId], (err, results) => {
+        if (err) {
+            console.error('Ошибка получения клиентов:', err);
+            return res.status(500).send({ message: 'Ошибка сервера.' });
+        }
+        res.send(results);
+    });
+});
+
+// Маршрут для обновления баланса пользователя
+app.put('/users', authenticateToken, (req, res) => {
+    const { amount } = req.body;
+    const userId = req.user.id;  // Получаем ID пользователя из JWT
+  
+    // Обновляем баланс пользователя
+    const query = 'UPDATE users SET amount = ? WHERE id = ?';
+    db.query(query, [amount, userId], (err, result) => {
+      if (err) {
+        console.error("Ошибка при обновлении баланса пользователя", err);
+        return res.status(500).json({ message: 'Ошибка при обновлении баланса' });
+      }
+      res.status(200).json({ message: 'Баланс пользователя обновлен успешно' });
+    });
+  });
+  
 
 app.listen(port, () => {
     console.log(`Сервер запущен на порту ${port}`);

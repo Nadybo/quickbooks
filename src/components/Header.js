@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Modal from 'react-bootstrap/Modal';
 import { Button } from 'react-bootstrap';
 import { jwtDecode } from 'jwt-decode';
+import { FaUserCircle } from "react-icons/fa";
 
 const Navbar = ({ onLogout }) => {
   const { t, i18n } = useTranslation();
@@ -16,7 +17,6 @@ const Navbar = ({ onLogout }) => {
       const decodedToken = jwtDecode(token);
       return {
         name: decodedToken.name,
-        role: decodedToken.role,
         email: decodedToken.email, 
       };
     }
@@ -56,11 +56,7 @@ const Navbar = ({ onLogout }) => {
               ))}
             </ButtonGroup>
             <Avatar onClick={() => setShowModal(true)}>
-              {/* Если аватар есть, показываем его, иначе показываем заглушку */}
-              <img
-                src={user.avatarUrl || "https://via.placeholder.com/40"}
-                alt="User Avatar"
-              />
+              <FaUserCircle/>
               <UserName>{user.name}</UserName>
             </Avatar>
           </RightSection>
@@ -146,12 +142,17 @@ const Avatar = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 30px;
   cursor: pointer;
+  padding: 10px;
 
-  img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+  svg {
+    color: black;
+    transition: color 0.3s ease;
+  }
+
+  &:hover svg {
+    color: #2CA01C;
   }
 `;
 

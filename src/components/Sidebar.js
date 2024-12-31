@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Stack, Button } from 'react-bootstrap';
+import { FaAngleLeft, FaAngleRight  } from "react-icons/fa";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styled from 'styled-components';
 import logo from './images/logo.png';
@@ -64,7 +65,7 @@ const Sidebar = () => {
       <div style={{ flex: 1 }}>
         <ButtonContainer>
           <ToggleButton onClick={toggleSidebar}>
-            {isSidebarVisible ? '<' : '>'}
+            {isSidebarVisible ? <FaAngleLeft /> : <FaAngleRight />}
           </ToggleButton>
         </ButtonContainer>
       </div>
