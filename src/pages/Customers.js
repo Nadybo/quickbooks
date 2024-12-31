@@ -171,13 +171,38 @@ function Customers() {
       </SearchContainer>
       <StyledTableContainer>
         <StyledTable className="table table-hover">
-          <thead>
+        <thead>
             <tr>
-              <th>Имя</th>
-              <th>Почта</th>
-              <th>Телефон</th>
-              <th>Тип</th>
-              <th>Дата создания</th>
+              <th onClick={() => {
+                setSortType('name');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}>
+                Имя {sortType === 'name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+              </th>
+              <th onClick={() => {
+                setSortType('email');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}>
+                Почта {sortType === 'email' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+              </th>
+              <th onClick={() => {
+                setSortType('phone');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}>
+                Телефон {sortType === 'phone' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+              </th>
+              <th onClick={() => {
+                setSortType('type');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}>
+                Тип {sortType === 'type' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+              </th>
+              <th onClick={() => {
+                setSortType('date');
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              }}>
+                Дата создания {sortType === 'date' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+              </th>
               <th>Действия</th>
             </tr>
           </thead>

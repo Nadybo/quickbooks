@@ -15,27 +15,49 @@ function Transactions() {
   const [sortType, setSortType] = useState('client_name');
   const [sortOrder, setSortOrder] = useState('asc');
   const token = localStorage.getItem("userToken");
+  const [statusFilter, setStatusFilter] = useState("paid"); // Default filter to "paid"
 
   const filterAndSortAccounts = (accounts, search, sortType, sortOrder) => {
     const filtered = accounts.filter((account) =>
-      account.status === 'paid' &&
       ['client_name', 'description', 'amount', 'status'].some((key) =>
         account[key]?.toString().toLowerCase().includes(search.toLowerCase())
       )
     );
 
     return filtered.sort((a, b) => {
-      if (sortType === 'client_name') {
-        return sortOrder === 'asc'
-          ? a.client_name.localeCompare(b.client_name)
-          : b.client_name.localeCompare(a.client_name);
-      } else if (sortType === 'date') {
-        const dateA = new Date(a.created_at);
-        const dateB = new Date(b.created_at);
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      const order = sortOrder === 'asc' ? 1 : -1;
+      switch (sortType) {
+        case 'client_name':
+        case 'status':
+        case 'category_name':
+          return a[sortType]?.localeCompare(b[sortType]) * order;
+        case 'amount':
+          return (a[sortType] - b[sortType]) * order;
+        case 'date':
+          return (new Date(a.created_at) - new Date(b.created_at)) * order;
+        default:
+          return 0;
       }
-      return 0;
     });
+  };
+
+  const filterByStatus = (accounts, status) => {
+    if (!status) return accounts; // If no status filter is set, return all accounts
+    return accounts.filter((account) => account.status === status);
+  };
+
+  const filteredAccounts = filterByStatus(
+    filterAndSortAccounts(accounts, search, sortType, sortOrder),
+    statusFilter
+  );
+
+  const handleSort = (type) => {
+    if (sortType === type) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortType(type);
+      setSortOrder("asc");
+    }
   };
 
   const apiRequest = (url, method = 'GET', data = null) => {
@@ -62,8 +84,6 @@ function Transactions() {
   useEffect(() => {
     fetchAllData();
   }, []);
-
-  const filteredAccounts = filterAndSortAccounts(accounts, search, sortType, sortOrder);
 
   const exportToCSV = () => {
     const csvData = Papa.unparse(filteredAccounts);
@@ -142,12 +162,17 @@ function Transactions() {
           <FaFileExcel />
         </button>
         <button className="btn btn-outline-success me-2" onClick={exportToPDF}>
-        <FaFilePdf />
+          <FaFilePdf />
         </button>
         </ButtonsGroup>
       </SearchContainer>
       <StyledTableContainer>
-        <AccountsTable accounts={filteredAccounts} />
+      <AccountsTable
+        accounts={filteredAccounts}
+        onSort={handleSort}
+        sortType={sortType}
+        sortOrder={sortOrder}
+      />
       </StyledTableContainer>
     </div>
   );
@@ -160,18 +185,28 @@ const statusMapping = {
   unpaid: "Не оплачено",
 };
 
-const AccountsTable = ({ accounts }) => (
+const AccountsTable = ({ accounts, onSort, sortType, sortOrder }) => (
   <StyledTable className="table table-hover">
     <thead>
-      <tr>
-        <th>Имя клиента</th>
-        <th>Сумма</th>
-        <th>Статус</th>
-        <th>Описание</th>
-        <th>Категория</th>
-        <th>Дата создания</th>
-      </tr>
-    </thead>
+          <tr>
+            <th onClick={() => onSort('client_name')} style={{ cursor: 'pointer' }}>
+              Имя клиента {sortType === 'client_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+            </th>
+            <th onClick={() => onSort('amount')} style={{ cursor: 'pointer' }}>
+              Сумма {sortType === 'amount' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+            </th>
+            <th>
+              Статус
+            </th>
+            <th>Описание</th>
+            <th onClick={() => onSort('category_name')} style={{ cursor: 'pointer' }}>
+              Категория {sortType === 'category_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+            </th>
+            <th onClick={() => onSort('date')} style={{ cursor: 'pointer' }}>
+              Дата создания {sortType === 'date' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+            </th>
+          </tr>
+        </thead>
     <tbody>
       {accounts.map((account) => (
         <tr key={account.account_id}>

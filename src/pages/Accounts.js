@@ -16,6 +16,7 @@ function Accounts() {
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [categories, setCategories] = useState([]);
   const [clients, setClients] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("");
   const token = localStorage.getItem("userToken"); 
 
   const initialAccountData = {
@@ -54,13 +55,22 @@ function Accounts() {
         apiRequest('http://localhost:5000/clients'),
         apiRequest('http://localhost:5000/accounts'),
       ]);
+      const categoriesMap = Object.fromEntries(
+        categoriesResponse.data.map((category) => [category.id, category.name])
+      );
       setCategories(categoriesResponse.data);
       setClients(clientsResponse.data);
-      setAccounts(accountsResponse.data);
+      setAccounts(
+        accountsResponse.data.map((account) => ({
+          ...account,
+          category_name: categoriesMap[account.category_id] || 'Неизвестно',
+        }))
+      );
     } catch (error) {
       toast.error('Ошибка загрузки данных: ' + error.message);
     }
   };
+  
 
   useEffect(() => {
     fetchAllData();
@@ -130,22 +140,44 @@ function Accounts() {
         account[key]?.toString().toLowerCase().includes(search.toLowerCase())
       )
     );
-
+  
     return filtered.sort((a, b) => {
-      if (sortType === 'client_name') {
-        return sortOrder === 'asc'
-          ? a.client_name.localeCompare(b.client_name)
-          : b.client_name.localeCompare(a.client_name);
-      } else if (sortType === 'date') {
-        const dateA = new Date(a.created_at);
-        const dateB = new Date(b.created_at);
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      const order = sortOrder === 'asc' ? 1 : -1;
+      switch (sortType) {
+        case 'client_name':
+        case 'status':
+        case 'category_name':
+          return a[sortType]?.localeCompare(b[sortType]) * order;
+        case 'amount':
+          return (a[sortType] - b[sortType]) * order;
+        case 'date':
+          return (new Date(a.created_at) - new Date(b.created_at)) * order;
+        default:
+          return 0;
       }
-      return 0;
     });
   };
+  
 
-  const filteredAccounts = filterAndSortAccounts(accounts, search, sortType, sortOrder);
+  const filterByStatus = (accounts, status) => {
+    if (!status) return accounts; // Если статус не выбран, возвращаем все записи
+    return accounts.filter((account) => account.status === status);
+  };
+  
+  const filteredAccounts = filterByStatus(
+    filterAndSortAccounts(accounts, search, sortType, sortOrder),
+    statusFilter
+  );
+
+  const handleSort = (type) => {
+    if (sortType === type) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortType(type);
+      setSortOrder("asc");
+    }
+  };
+  
 
   return (
     <div>
@@ -182,11 +214,15 @@ function Accounts() {
         </button>
       </SearchContainer>
       <StyledTableContainer>
-        <AccountsTable
-          accounts={filteredAccounts}
-          onEdit={handleShowModal}
-          onDelete={deleteAccount}
-        />
+      <AccountsTable
+        accounts={filteredAccounts}
+        onEdit={handleShowModal}
+        onDelete={deleteAccount}
+        onSort={handleSort}
+        sortType={sortType}
+        sortOrder={sortOrder}
+      />
+
       </StyledTableContainer>
       <AccountModal
         show={showModal}
@@ -210,16 +246,26 @@ const statusMapping = {
 };
 
 // Компоненты таблицы и модального окна
-const AccountsTable = ({ accounts, onEdit, onDelete }) => (
+const AccountsTable = ({ accounts, onEdit, onDelete, onSort, sortType, sortOrder }) => (
   <StyledTable className="table table-hover">
     <thead>
       <tr>
-        <th>Имя клиента</th>
-        <th>Сумма</th>
-        <th>Статус</th>
+        <th onClick={() => onSort('client_name')} style={{ cursor: 'pointer' }}>
+          Имя клиента {sortType === 'client_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        </th>
+        <th onClick={() => onSort('amount')} style={{ cursor: 'pointer' }}>
+          Сумма {sortType === 'amount' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        </th>
+        <th onClick={() => onSort('status')} style={{ cursor: 'pointer' }}>
+          Статус {sortType === 'status' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        </th>
         <th>Описание</th>
-        <th>Категория</th>
-        <th>Дата создания</th>
+        <th onClick={() => onSort('category_name')} style={{ cursor: 'pointer' }}>
+          Категория {sortType === 'category_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        </th>
+        <th onClick={() => onSort('date')} style={{ cursor: 'pointer' }}>
+          Дата создания {sortType === 'date' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        </th>
         <th>Действия</th>
       </tr>
     </thead>
@@ -228,33 +274,41 @@ const AccountsTable = ({ accounts, onEdit, onDelete }) => (
         <tr key={account.account_id}>
           <td>{account.client_name}</td>
           <td>{account.amount}</td>
-          <td>{statusMapping[account.status] || account.status}</td>
+          <td
+            style={{
+              backgroundColor: account.status === "paid" ? "green" : "transparent",
+              color: account.status === "paid" ? "white" : "black",
+            }}
+          >
+            {statusMapping[account.status] || account.status}
+          </td>
           <td>{account.description}</td>
           <td>{account.category_name}</td>
           <td>{new Date(account.created_at).toLocaleDateString()}</td>
           <td>
-              <Dropdown>
-                <Dropdown.Toggle variant="outline-success" size="sm" id="dropdown-basic">
-                  Действия
-                </Dropdown.Toggle>
-
-                <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => onEdit(account)}>
-                    <FaEdit className="me-2" />
-                    Редактировать
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => onDelete(account.account_id)}>
-                    <FaTrash className="me-2" />
-                    Удалить
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </td>
+            <Dropdown>
+              <Dropdown.Toggle variant="outline-success" size="sm" id="dropdown-basic">
+                Действия
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                <Dropdown.Item onClick={() => onEdit(account)}>
+                  <FaEdit className="me-2" />
+                  Редактировать
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => onDelete(account.account_id)}>
+                  <FaTrash className="me-2" />
+                  Удалить
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </td>
         </tr>
       ))}
     </tbody>
   </StyledTable>
 );
+
+
 
 const AccountModal = ({ show, onHide, accountData, clients, categories, onChange, onSave, onClientChange }) => (
   <Modal show={show} onHide={onHide}>
