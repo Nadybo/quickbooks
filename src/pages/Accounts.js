@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaTrash, FaEdit, FaSortAlphaDown, FaSortAlphaUp, FaUserPlus, FaFilter } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Dropdown  } from "react-bootstrap";
 import 'react-toastify/dist/ReactToastify.css';
 import axios from "axios";
 
@@ -233,19 +233,23 @@ const AccountsTable = ({ accounts, onEdit, onDelete }) => (
           <td>{account.category_name}</td>
           <td>{new Date(account.created_at).toLocaleDateString()}</td>
           <td>
-            <button
-              className="btn btn-sm btn-outline-danger me-2"
-              onClick={() => onDelete(account.account_id)}
-            >
-              <FaTrash />
-            </button>
-            <button
-              className="btn btn-sm btn-outline-primary"
-              onClick={() => onEdit(account)}
-            >
-              <FaEdit />
-            </button>
-          </td>
+              <Dropdown>
+                <Dropdown.Toggle variant="outline-success" size="sm" id="dropdown-basic">
+                  Действия
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={() => onEdit(account)}>
+                    <FaEdit className="me-2" />
+                    Редактировать
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => onDelete(account.account_id)}>
+                    <FaTrash className="me-2" />
+                    Удалить
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            </td>
         </tr>
       ))}
     </tbody>

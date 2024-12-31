@@ -89,7 +89,6 @@ const StyledLink = styled(({ ...props }) => <Link {...props} />)`
   &:hover {
     color: white;
     background-color: black;
-    box-shadow: inset 5px 0 0 #2CA01C;
   }
 
   &:focus {

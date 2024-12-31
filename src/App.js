@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
@@ -20,31 +20,37 @@ function App() {
 
   useEffect(() => {
     const token = localStorage.getItem('userToken');
-    if (token) {
-      setIsAuthenticated(true);  // Если токен найден, считаем пользователя авторизованным
-    } else {
-      setIsAuthenticated(false);
-    }
+    setIsAuthenticated(!!token); 
   }, []);
 
+  const SavePathListener = () => {
+    const location = useLocation();
+    useEffect(() => {
+      if (isAuthenticated) {
+        localStorage.setItem('lastPath', location.pathname);
+      }
+    }, [location.pathname]); 
+    return null;
+  };
+
   const handleLogin = (authenticated) => {
-    setIsAuthenticated(authenticated);  // Обновляем статус авторизации в родительском компоненте
+    setIsAuthenticated(authenticated);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('userToken');
+    localStorage.removeItem('lastPath');
     setIsAuthenticated(false);
   };
 
-  window.addEventListener('beforeunload', () => {
-    const token = localStorage.getItem('userToken');
-    if (token) {
-        handleLogout(); // Вызов функции выхода
-    }
-});
+  const getInitialPath = () => {
+    const savedPath = localStorage.getItem('lastPath');
+    return savedPath || '/';
+  };
 
   return (
     <Router>
+      <SavePathListener />
       <div className="d-flex vh-100">
         {isAuthenticated && <Sidebar />}
         <div className="d-flex flex-column flex-grow-1">
@@ -54,14 +60,18 @@ function App() {
               {/* Публичные маршруты */}
               <Route
                 path="/login"
-                element={isAuthenticated ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />}
+                element={
+                  isAuthenticated ? <Navigate to={getInitialPath()} /> : <LoginPage onLogin={handleLogin} />
+                }
               />
               <Route
                 path="/register"
-                element={isAuthenticated ? <Navigate to="/" /> : <RegisterForm />}
+                element={
+                  isAuthenticated ? <Navigate to={getInitialPath()} /> : <RegisterForm />
+                }
               />
 
-              {/* Защищенные маршруты */}
+              {/* Защищённые маршруты */}
               <Route
                 path="/"
                 element={
