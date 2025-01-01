@@ -28,6 +28,12 @@
     "modal":{
       "userSettings":"User Settings",
       "logout":"Logout"
+    },
+    "dashboard":{
+      "creditCard" : "FA lite credit card",
+      "balance" : "Balance",
+      "name" : "Name"
     }
+
 
 }

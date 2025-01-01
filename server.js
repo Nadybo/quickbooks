@@ -1,10 +1,10 @@
-const express = require('express');
-const mysql = require('mysql2');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs'); 
-require('dotenv').config();
+const express = require("express");
+const mysql = require("mysql2");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+require("dotenv").config();
 const secretKey = process.env.SECRET_KEY;
 
 const app = express();
@@ -14,220 +14,244 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const db = mysql.createConnection({
-    host: '127.0.0.1', 
-    user: 'root',      
-    password: 'root', 
-    database: 'falite',
+  host: "127.0.0.1",
+  user: "root",
+  password: "root",
+  database: "falite",
 });
 
 db.connect((err) => {
-    if (err) {
-        console.error('Ошибка подключения к базе данных:', err.message);
-    } else {
-        console.log('Соединение с базой данных установлено.');
-    }
+  if (err) {
+    console.error("Ошибка подключения к базе данных:", err.message);
+  } else {
+    console.log("Соединение с базой данных установлено.");
+  }
 });
 
 // Функция для аутентификации токена
 function authenticateToken(req, res, next) {
-    const token = req.headers['authorization']?.split(' ')[1]; 
+  const token = req.headers["authorization"]?.split(" ")[1];
 
-    if (!token) {
-        return res.status(401).send({ message: 'Токен не предоставлен' });
+  if (!token) {
+    return res.status(401).send({ message: "Токен не предоставлен" });
+  }
+
+  jwt.verify(token, secretKey, (err, user) => {
+    if (err) {
+      return res.status(403).send({ message: "Неверный или устаревший токен" });
     }
 
-    jwt.verify(token, secretKey, (err, user) => {
-        if (err) {
-            return res.status(403).send({ message: 'Неверный или устаревший токен' });
-        }
-
-        req.user = user; // Добавляем данные пользователя в запрос
-        next();
-    });
+    req.user = user; // Добавляем данные пользователя в запрос
+    next();
+  });
 }
 
 // Регистрация пользователя
-app.post('/register', async (req, res) => {
-    const { name, email, password} = req.body;
+app.post("/register", async (req, res) => {
+  const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
-        return res.status(400).send({ message: 'Все поля обязательны.' });
-    }
+  if (!name || !email || !password) {
+    return res.status(400).send({ message: "Все поля обязательны." });
+  }
 
-    try {
-        // Проверка, существует ли уже пользователь с таким email
-        const checkQuery = 'SELECT * FROM Users WHERE email = ?';
-        db.query(checkQuery, [email], async (err, results) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).send({ message: 'Ошибка при проверке email.' });
-            }
-
-            if (results.length > 0) {
-                return res.status(400).send({ message: 'Пользователь с таким email уже существует.' });
-            }
-
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            const query = 'INSERT INTO Users (name, email, password, created_at) VALUES (?, ?, ?, NOW())';
-            db.query(query, [name, email, hashedPassword], (err, results) => {
-                if (err) {
-                    console.error(err);
-                    return res.status(500).send({ message: 'Ошибка сервера.' });
-                }
-                res.status(201).send({ message: 'Регистрация успешна!' });
-            });
-        });
-    } catch (err) {
+  try {
+    // Проверка, существует ли уже пользователь с таким email
+    const checkQuery = "SELECT * FROM Users WHERE email = ?";
+    db.query(checkQuery, [email], async (err, results) => {
+      if (err) {
         console.error(err);
-        res.status(500).send({ message: 'Ошибка при хэшировании пароля.' });
-    }
+        return res.status(500).send({ message: "Ошибка при проверке email." });
+      }
+
+      if (results.length > 0) {
+        return res
+          .status(400)
+          .send({ message: "Пользователь с таким email уже существует." });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const query =
+        "INSERT INTO Users (name, email, password, created_at) VALUES (?, ?, ?, NOW())";
+      db.query(query, [name, email, hashedPassword], (err, results) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send({ message: "Ошибка сервера." });
+        }
+        res.status(201).send({ message: "Регистрация успешна!" });
+      });
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: "Ошибка при хэшировании пароля." });
+  }
 });
 
-
 // Вход пользователя
-app.post('/login', (req, res) => {
-    const { email, password } = req.body;
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-        console.error('Отсутствует email или пароль');
-        return res.status(400).send({ message: 'Все поля обязательны.' });
+  if (!email || !password) {
+    console.error("Отсутствует email или пароль");
+    return res.status(400).send({ message: "Все поля обязательны." });
+  }
+
+  const query = "SELECT * FROM Users WHERE email = ?";
+  db.query(query, [email], async (err, results) => {
+    if (err) {
+      console.error("Ошибка запроса в базе данных:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
     }
 
-    const query = 'SELECT * FROM Users WHERE email = ?';
-    db.query(query, [email], async (err, results) => {
-        if (err) {
-            console.error('Ошибка запроса в базе данных:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
+    if (results.length === 0) {
+      console.error("Пользователь с таким email не найден");
+      return res.status(401).send({ message: "Неверный email или пароль." });
+    }
 
-        if (results.length === 0) {
-            console.error('Пользователь с таким email не найден');
-            return res.status(401).send({ message: 'Неверный email или пароль.' });
-        }
+    const user = results[0];
 
-        const user = results[0];
+    try {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        console.error("Неверный пароль");
+        return res.status(401).send({ message: "Неверный email или пароль." });
+      }
 
-        try {
-            const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) {
-                console.error('Неверный пароль');
-                return res.status(401).send({ message: 'Неверный email или пароль.' });
-            }
+      const token = jwt.sign(
+        { userId: user.id, name: user.name, email: user.email },
+        secretKey,
+        { expiresIn: "24h" }
+      );
 
-            const token = jwt.sign({ userId: user.id, name: user.name, email: user.email }, secretKey, { expiresIn: '24h' });
-
-            res.send({
-                message: 'Вход успешен!',
-                token,
-                user: {
-                    user_id: user.id,
-                    name: user.name,
-                    role: user.role,
-                    email: user.email
-                }
-            });
-        } catch (err) {
-            console.error('Ошибка при проверке пароля:', err);
-            res.status(500).send({ message: 'Ошибка при проверке пароля.' });
-        }
-    });
+      res.send({
+        message: "Вход успешен!",
+        token,
+        user: {
+          user_id: user.id,
+          name: user.name,
+          role: user.role,
+          email: user.email,
+        },
+      });
+    } catch (err) {
+      console.error("Ошибка при проверке пароля:", err);
+      res.status(500).send({ message: "Ошибка при проверке пароля." });
+    }
+  });
 });
 
 // Получение клиентов, фильтруя по user_id
-app.get('/clients', authenticateToken, (req, res) => {
-    const userId = req.user.userId;  // Получаем userId из токена
+app.get("/clients", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
 
-    const query = `SELECT * FROM Clients WHERE user_id = ?`;
+  const query = `SELECT * FROM Clients WHERE user_id = ?`;
 
-    db.query(query, [userId], (err, results) => {
-        if (err) {
-            console.error('Ошибка получения клиентов:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-        res.send(results);
-    });
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Ошибка получения клиентов:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res.send(results);
+  });
 });
 
 // Добавление нового клиента с user_id
-app.post('/clients', authenticateToken, (req, res) => {
-    const { name, email, phone, address, type, company_name } = req.body;
-    const userId = req.user.userId;  // Получаем userId из токена
+app.post("/clients", authenticateToken, (req, res) => {
+  const { name, email, phone, address, type, company_name } = req.body;
+  const userId = req.user.userId; // Получаем userId из токена
 
-    if (!name || !type) {
-        return res.status(400).send({ message: 'Имя и тип клиента обязательны.' });
+  if (!name || !type) {
+    return res.status(400).send({ message: "Имя и тип клиента обязательны." });
+  }
+
+  const query = `INSERT INTO Clients (name, email, phone, address, type, user_id, company_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`;
+
+  db.query(
+    query,
+    [name, email, phone, address, type, userId, company_name],
+    (err, result) => {
+      if (err) {
+        console.error("Ошибка добавления клиента:", err);
+        return res.status(500).send({ message: "Ошибка сервера." });
+      }
+
+      if (result && result.insertId) {
+        res.status(201).send({
+          id: result.insertId,
+          name,
+          email,
+          phone,
+          address,
+          type,
+          company_name,
+        });
+      } else {
+        console.error("Ошибка: результат не содержит insertId.");
+        res
+          .status(500)
+          .send({ message: "Ошибка сервера при добавлении клиента." });
+      }
     }
-
-    const query = `INSERT INTO Clients (name, email, phone, address, type, user_id, company_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`;
-
-    db.query(query, [name, email, phone, address, type, userId, company_name], (err, result) => {
-        if (err) {
-            console.error('Ошибка добавления клиента:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-    
-        if (result && result.insertId) {
-            res.status(201).send({
-                id: result.insertId,
-                name,
-                email,
-                phone,
-                address,
-                type,
-                company_name
-            });
-        } else {
-            console.error('Ошибка: результат не содержит insertId.');
-            res.status(500).send({ message: 'Ошибка сервера при добавлении клиента.' });
-        }
-    });
-    
+  );
 });
 
 // Обновление клиента с проверкой на user_id
-app.put('/clients/:id', authenticateToken, (req, res) => {
-    const { id } = req.params;
-    const { name, email, phone, address, type, company_name } = req.body;
-    const userId = req.user.userId;
+app.put("/clients/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const { name, email, phone, address, type, company_name } = req.body;
+  const userId = req.user.userId;
 
-    const query = `UPDATE Clients SET name = ?, email = ?, phone = ?, address = ?, type = ?, company_name = ?, updated_at = NOW() WHERE id = ? AND user_id = ?`;
+  const query = `UPDATE Clients SET name = ?, email = ?, phone = ?, address = ?, type = ?, company_name = ?, updated_at = NOW() WHERE id = ? AND user_id = ?`;
 
-    db.query(query, [name, email, phone, address, type, id, userId, company_name], (err, result) => {
-        if (err) {
-            console.error('Ошибка обновления клиента:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(404).send({ message: 'Клиент не найден или у вас нет прав на редактирование этого клиента.' });
-        }
-        res.send({ message: 'Клиент обновлен успешно!' });
-    });
+  db.query(
+    query,
+    [name, email, phone, address, type, id, userId, company_name],
+    (err, result) => {
+      if (err) {
+        console.error("Ошибка обновления клиента:", err);
+        return res.status(500).send({ message: "Ошибка сервера." });
+      }
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .send({
+            message:
+              "Клиент не найден или у вас нет прав на редактирование этого клиента.",
+          });
+      }
+      res.send({ message: "Клиент обновлен успешно!" });
+    }
+  );
 });
 
 // Удаление клиента
-app.delete('/clients/:id', authenticateToken, (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.userId;
+app.delete("/clients/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.userId;
 
-    const query = `DELETE FROM Clients WHERE id = ? AND user_id = ?`;
+  const query = `DELETE FROM Clients WHERE id = ? AND user_id = ?`;
 
-    db.query(query, [id, userId], (err, result) => {
-        if (err) {
-            console.error('Ошибка удаления клиента:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(404).send({ message: 'Клиент не найден или у вас нет прав на удаление этого клиента.' });
-        }
-        res.send({ message: 'Клиент удален успешно!' });
-    });
+  db.query(query, [id, userId], (err, result) => {
+    if (err) {
+      console.error("Ошибка удаления клиента:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .send({
+          message:
+            "Клиент не найден или у вас нет прав на удаление этого клиента.",
+        });
+    }
+    res.send({ message: "Клиент удален успешно!" });
+  });
 });
 
+app.get("/accounts", authenticateToken, (req, res) => {
+  const userId = req.user.userId;
 
-app.get('/accounts', authenticateToken, (req, res) => {
-    const userId = req.user.userId;
-
-    const query = `
+  const query = `
         SELECT 
             Accounts.id AS account_id,
             Accounts.client_id,
@@ -244,105 +268,121 @@ app.get('/accounts', authenticateToken, (req, res) => {
         WHERE Accounts.user_id = ?
     `;
 
-    db.query(query, [userId], (err, results) => {
-        if (err) {
-            console.error('Ошибка получения счетов:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-        res.send(results);
-    });
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Ошибка получения счетов:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res.send(results);
+  });
 });
 
-
-
 // Добавление нового счета
-app.post('/accounts', authenticateToken, (req, res) => {
-    const { client_id, amount, status, description, category_id } = req.body;
-    const userId = req.user.userId;
+app.post("/accounts", authenticateToken, (req, res) => {
+  const { client_id, amount, status, description, category_id } = req.body;
+  const userId = req.user.userId;
 
-    // Validate client_id
-    if (!client_id || isNaN(client_id) || client_id <= 0) {
-        return res.status(400).send({ message: 'Неверный client_id. Он должен быть положительным числом.' });
-    }
+  // Validate client_id
+  if (!client_id || isNaN(client_id) || client_id <= 0) {
+    return res
+      .status(400)
+      .send({
+        message: "Неверный client_id. Он должен быть положительным числом.",
+      });
+  }
 
-    // Validate amount
-    if (isNaN(amount) || amount < 0) {
-        return res.status(400).send({ message: 'Сумма должна быть числом и больше или равна нулю.' });
-    }
+  // Validate amount
+  if (isNaN(amount) || amount < 0) {
+    return res
+      .status(400)
+      .send({ message: "Сумма должна быть числом и больше или равна нулю." });
+  }
 
-    // Validate status
-    if (!['paid', 'unpaid'].includes(status)) {
-        return res.status(400).send({ message: 'Неверный статус. Допустимые значения: paid, unpaid.' });
-    }
+  // Validate status
+  if (!["paid", "unpaid"].includes(status)) {
+    return res
+      .status(400)
+      .send({ message: "Неверный статус. Допустимые значения: paid, unpaid." });
+  }
 
-    // Validate category_id
-    if (!category_id) {
-        return res.status(400).send({ message: 'Категория является обязательным полем.' });
-    }
+  // Validate category_id
+  if (!category_id) {
+    return res
+      .status(400)
+      .send({ message: "Категория является обязательным полем." });
+  }
 
-    const query = `
+  const query = `
         INSERT INTO accounts (user_id, client_id, amount, status, description, category_id, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
-    db.query(query, [userId, client_id, amount, status, description, category_id], (err, result) => {
-        if (err) {
-            console.error('Ошибка при добавлении счета:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
+  db.query(
+    query,
+    [userId, client_id, amount, status, description, category_id],
+    (err, result) => {
+      if (err) {
+        console.error("Ошибка при добавлении счета:", err);
+        return res.status(500).send({ message: "Ошибка сервера." });
+      }
 
-        if (result && result.insertId) {
-            res.status(201).send({
-                id: result.insertId,
-                user_id: userId,
-                client_id,
-                amount,
-                status,
-                description,
-                category_id,
-                created_at: new Date(),
-                updated_at: new Date()
-            });
-        } else {
-            console.error('Ошибка: результат не содержит insertId.');
-            res.status(500).send({ message: 'Ошибка при добавлении счета.' });
-        }
-    });
+      if (result && result.insertId) {
+        res.status(201).send({
+          id: result.insertId,
+          user_id: userId,
+          client_id,
+          amount,
+          status,
+          description,
+          category_id,
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
+      } else {
+        console.error("Ошибка: результат не содержит insertId.");
+        res.status(500).send({ message: "Ошибка при добавлении счета." });
+      }
+    }
+  );
 });
 
-
-
 // Удаление счета
-app.delete('/accounts/:id', authenticateToken, (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.userId;
+app.delete("/accounts/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.userId;
 
-    const query = `DELETE FROM Accounts WHERE id = ? AND user_id = ?`;
+  const query = `DELETE FROM Accounts WHERE id = ? AND user_id = ?`;
 
-    db.query(query, [id, userId], (err, result) => {
-        if (err) {
-            console.error('Ошибка удаления клиента:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(404).send({ message: 'Счет не найден или у вас нет прав на удаление этого счета.' });
-        }        
-        res.send({ message: 'Клиент удален успешно!' });
-    });
+  db.query(query, [id, userId], (err, result) => {
+    if (err) {
+      console.error("Ошибка удаления клиента:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .send({
+          message: "Счет не найден или у вас нет прав на удаление этого счета.",
+        });
+    }
+    res.send({ message: "Клиент удален успешно!" });
+  });
 });
 
 // Обновление записи в таблице accounts
 app.put("/accounts/:id", async (req, res) => {
-    const { id } = req.params;
-    const { client_id, amount, status, description, category_id } = req.body;
-  
-    // Валидация данных
-    if (!amount || !status || !category_id) {
-      return res.status(400).json({ error: "Поля amount, status и category_id обязательны." });
-    }
-  
-    try {
-      const query = `
+  const { id } = req.params;
+  const { client_id, amount, status, description, category_id } = req.body;
+
+  // Валидация данных
+  if (!amount || !status || !category_id) {
+    return res
+      .status(400)
+      .json({ error: "Поля amount, status и category_id обязательны." });
+  }
+
+  try {
+    const query = `
         UPDATE accounts 
         SET 
           client_id = ?, 
@@ -352,118 +392,197 @@ app.put("/accounts/:id", async (req, res) => {
           category_id = ?, 
           updated_at = NOW() 
         WHERE id = ?`;
-  
-      const values = [client_id, amount, status, description, category_id, id];
-  
-      const result = await db.execute(query, values);  // No destructuring needed
-  
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "Запись не найдена." });
-      }
-  
-      res.status(200).json({ message: "Запись успешно обновлена." });
-    } catch (error) {
-      console.error("Ошибка обновления записи:", error);
-      res.status(500).json({ error: "Ошибка на сервере." });
+
+    const values = [client_id, amount, status, description, category_id, id];
+
+    const result = await db.execute(query, values); // No destructuring needed
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Запись не найдена." });
     }
+
+    res.status(200).json({ message: "Запись успешно обновлена." });
+  } catch (error) {
+    console.error("Ошибка обновления записи:", error);
+    res.status(500).json({ error: "Ошибка на сервере." });
+  }
 });
 
-
-app.get('/categories', authenticateToken, (req, res) => {
-    const query = `SELECT * FROM categories`;
-db.query(query, (err, results) => {
+app.get("/categories", authenticateToken, (req, res) => {
+  const query = `SELECT * FROM categories`;
+  db.query(query, (err, results) => {
     if (err) {
-        console.error('Ошибка получения категорий:', err);
-        return res.status(500).send({ message: 'Ошибка сервера.' });
+      console.error("Ошибка получения категорий:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
     }
     res.send(results);
-});
+  });
 });
 
-app.post('/categories', authenticateToken, (req, res) => {
-    const { name, description } = req.body;
+app.post("/categories", authenticateToken, (req, res) => {
+  const { name, description } = req.body;
 
-    const query = `
+  const query = `
         INSERT INTO categories (name, description)
         VALUES (?, ?)
     `;
 
-    db.query(query, [ name, description], (err, result) => {
-        if (err) {
-            console.error('Ошибка добавления категории:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-        res.send({ message: 'Категория успешно добавлена.', categoryId: result.insertId });
+  db.query(query, [name, description], (err, result) => {
+    if (err) {
+      console.error("Ошибка добавления категории:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res.send({
+      message: "Категория успешно добавлена.",
+      categoryId: result.insertId,
     });
+  });
 });
 
-app.put('/categories/:id', authenticateToken, (req, res) => {
-    const categoryId = req.params.id;
-    const { name, description } = req.body;
+app.put("/categories/:id", authenticateToken, (req, res) => {
+  const categoryId = req.params.id;
+  const { name, description } = req.body;
 
-    const query = `
+  const query = `
         UPDATE categories 
         SET name = ?, description = ?
         WHERE id = ?
     `;
 
-    db.query(query, [name, description, categoryId], (err, result) => {
-        if (err) {
-            console.error('Ошибка обновления категории:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-        res.send({ message: 'Категория успешно обновлена.' });
-    });
+  db.query(query, [name, description, categoryId], (err, result) => {
+    if (err) {
+      console.error("Ошибка обновления категории:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res.send({ message: "Категория успешно обновлена." });
+  });
 });
 
-app.delete('/categories/:id', authenticateToken, (req, res) => {
-    const categoryId = req.params.id;
+app.delete("/categories/:id", authenticateToken, (req, res) => {
+  const categoryId = req.params.id;
 
-    const query = `
+  const query = `
         DELETE FROM categories WHERE id = ?
     `;
 
-    db.query(query, [categoryId], (err, result) => {
-        if (err) {
-            console.error('Ошибка удаления категории:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-        res.send({ message: 'Категория успешно удалена.' });
-    });
+  db.query(query, [categoryId], (err, result) => {
+    if (err) {
+      console.error("Ошибка удаления категории:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res.send({ message: "Категория успешно удалена." });
+  });
 });
 
+app.get("/users", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
 
-app.get('/users', authenticateToken, (req, res) => {
-    const userId = req.user.userId;  // Получаем userId из токена
+  const query = `SELECT * FROM users WHERE id = ?`;
 
-    const query = `SELECT * FROM users WHERE id = ?`;
-
-    db.query(query, [userId], (err, results) => {
-        if (err) {
-            console.error('Ошибка получения клиентов:', err);
-            return res.status(500).send({ message: 'Ошибка сервера.' });
-        }
-        res.send(results);
-    });
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Ошибка получения клиентов:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res.send(results);
+  });
 });
 
 // Маршрут для обновления баланса пользователя
-app.put('/users', authenticateToken, (req, res) => {
-    const { amount } = req.body;
-    const userId = req.user.id;  // Получаем ID пользователя из JWT
-  
-    // Обновляем баланс пользователя
-    const query = 'UPDATE users SET amount = ? WHERE id = ?';
-    db.query(query, [amount, userId], (err, result) => {
-      if (err) {
-        console.error("Ошибка при обновлении баланса пользователя", err);
-        return res.status(500).json({ message: 'Ошибка при обновлении баланса' });
-      }
-      res.status(200).json({ message: 'Баланс пользователя обновлен успешно' });
-    });
+app.put("/users", authenticateToken, (req, res) => {
+  const { amount } = req.body;
+  const userId = req.user.id; // Получаем ID пользователя из JWT
+
+  // Обновляем баланс пользователя
+  const query = "UPDATE users SET amount = ? WHERE id = ?";
+  db.query(query, [amount, userId], (err, result) => {
+    if (err) {
+      console.error("Ошибка при обновлении баланса пользователя", err);
+      return res.status(500).json({ message: "Ошибка при обновлении баланса" });
+    }
+    res.status(200).json({ message: "Баланс пользователя обновлен успешно" });
   });
-  
+});
+
+app.post("/tasks", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
+  const { title, description, status, start_date, due_date } = req.body;
+
+  const query = `INSERT INTO tasks (user_id, title, description, status, start_date, due_date, created_at, updated_at) 
+                   VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+
+  db.query(
+    query,
+    [userId, title, description, status, start_date, due_date],
+    (err, result) => {
+      if (err) {
+        console.error("Ошибка при создании задачи:", err);
+        return res.status(500).send({ message: "Ошибка сервера." });
+      }
+      res
+        .status(201)
+        .send({ message: "Задача создана.", taskId: result.insertId });
+    }
+  );
+});
+
+app.get("/tasks", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
+
+  const query = `SELECT * FROM tasks WHERE user_id = ?`;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Ошибка получения задач:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res.send(results);
+  });
+});
+
+app.put("/tasks/:id", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
+  const taskId = req.params.id;
+  const { title, description, status, start_date, due_date } = req.body;
+
+  const query = `UPDATE tasks 
+                   SET title = ?, description = ?, status = ?, start_date = ?, due_date = ?, updated_at = NOW() 
+                   WHERE id = ? AND user_id = ?`;
+
+  db.query(
+    query,
+    [title, description, status, start_date, due_date, taskId, userId],
+    (err, result) => {
+      if (err) {
+        console.error("Ошибка обновления задачи:", err);
+        return res.status(500).send({ message: "Ошибка сервера." });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).send({ message: "Задача не найдена." });
+      }
+      res.send({ message: "Задача обновлена." });
+    }
+  );
+});
+
+app.delete("/tasks/:id", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
+  const taskId = req.params.id;
+
+  const query = `DELETE FROM tasks WHERE id = ? AND user_id = ?`;
+
+  db.query(query, [taskId, userId], (err, result) => {
+    if (err) {
+      console.error("Ошибка удаления задачи:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).send({ message: "Задача не найдена." });
+    }
+    res.send({ message: "Задача удалена." });
+  });
+});
 
 app.listen(port, () => {
-    console.log(`Сервер запущен на порту ${port}`);
+  console.log(`Сервер запущен на порту ${port}`);
 });
