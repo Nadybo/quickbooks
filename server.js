@@ -202,22 +202,19 @@ app.put("/clients/:id", authenticateToken, (req, res) => {
   const userId = req.user.userId;
 
   const query = `UPDATE Clients SET name = ?, email = ?, phone = ?, address = ?, type = ?, company_name = ?, updated_at = NOW() WHERE id = ? AND user_id = ?`;
-
   db.query(
     query,
-    [name, email, phone, address, type, id, userId, company_name],
+    [name, email, phone, address, type, company_name, id, userId], // Ensure userId is correct
     (err, result) => {
       if (err) {
         console.error("Ошибка обновления клиента:", err);
         return res.status(500).send({ message: "Ошибка сервера." });
       }
       if (result.affectedRows === 0) {
-        return res
-          .status(404)
-          .send({
-            message:
-              "Клиент не найден или у вас нет прав на редактирование этого клиента.",
-          });
+        return res.status(404).send({
+          message:
+            "Клиент не найден или у вас нет прав на редактирование этого клиента.",
+        });
       }
       res.send({ message: "Клиент обновлен успешно!" });
     }
@@ -237,12 +234,10 @@ app.delete("/clients/:id", authenticateToken, (req, res) => {
       return res.status(500).send({ message: "Ошибка сервера." });
     }
     if (result.affectedRows === 0) {
-      return res
-        .status(404)
-        .send({
-          message:
-            "Клиент не найден или у вас нет прав на удаление этого клиента.",
-        });
+      return res.status(404).send({
+        message:
+          "Клиент не найден или у вас нет прав на удаление этого клиента.",
+      });
     }
     res.send({ message: "Клиент удален успешно!" });
   });
@@ -277,6 +272,54 @@ app.get("/accounts", authenticateToken, (req, res) => {
   });
 });
 
+app.put("/accounts/pay/:id", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Идентификатор текущего пользователя
+  const accountId = req.params.id; // Идентификатор счета
+
+  const checkQuery = `
+      SELECT status FROM Accounts 
+      WHERE id = ? AND user_id = ?;
+    `;
+
+  const updateQuery = `
+      UPDATE Accounts 
+      SET status = 'paid', updated_at = NOW() 
+      WHERE id = ? AND user_id = ?;
+    `;
+
+  db.query(checkQuery, [accountId, userId], (checkErr, checkResults) => {
+    if (checkErr) {
+      console.error("Ошибка проверки статуса счета:", checkErr);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+
+    if (checkResults.length === 0) {
+      return res
+        .status(404)
+        .send({ message: "Счет не найден или доступ запрещен." });
+    }
+
+    if (checkResults[0].status === "paid") {
+      return res.status(400).send({ message: "Счет уже оплачен." });
+    }
+
+    db.query(updateQuery, [accountId, userId], (updateErr, updateResults) => {
+      if (updateErr) {
+        console.error("Ошибка обновления статуса счета:", updateErr);
+        return res.status(500).send({ message: "Ошибка сервера." });
+      }
+
+      if (updateResults.affectedRows === 0) {
+        return res
+          .status(404)
+          .send({ message: "Счет не найден или доступ запрещен." });
+      }
+
+      res.send({ message: "Счет успешно оплачен." });
+    });
+  });
+});
+
 // Добавление нового счета
 app.post("/accounts", authenticateToken, (req, res) => {
   const { client_id, amount, status, description, category_id } = req.body;
@@ -284,11 +327,9 @@ app.post("/accounts", authenticateToken, (req, res) => {
 
   // Validate client_id
   if (!client_id || isNaN(client_id) || client_id <= 0) {
-    return res
-      .status(400)
-      .send({
-        message: "Неверный client_id. Он должен быть положительным числом.",
-      });
+    return res.status(400).send({
+      message: "Неверный client_id. Он должен быть положительным числом.",
+    });
   }
 
   // Validate amount
@@ -359,11 +400,9 @@ app.delete("/accounts/:id", authenticateToken, (req, res) => {
       return res.status(500).send({ message: "Ошибка сервера." });
     }
     if (result.affectedRows === 0) {
-      return res
-        .status(404)
-        .send({
-          message: "Счет не найден или у вас нет прав на удаление этого счета.",
-        });
+      return res.status(404).send({
+        message: "Счет не найден или у вас нет прав на удаление этого счета.",
+      });
     }
     res.send({ message: "Клиент удален успешно!" });
   });
@@ -527,7 +566,7 @@ app.post("/tasks", authenticateToken, (req, res) => {
 });
 
 app.get("/tasks", authenticateToken, (req, res) => {
-  const userId = req.user.userId; 
+  const userId = req.user.userId;
 
   const query = `SELECT * FROM tasks WHERE user_id = ?`;
 
@@ -540,39 +579,41 @@ app.get("/tasks", authenticateToken, (req, res) => {
   });
 });
 
-app.put('/tasks/:id', authenticateToken, (req, res) => {
-    const { id } = req.params;
-    const { title, description, status, start_date, due_date } = req.body;
-    const userId = req.user.userId;
-  
-    // Валидация данных
-    if (!title || title.trim() === '') {
-      return res.status(400).json({ message: "Название задачи не может быть пустым." });
-    }
-  
-    const query = `
+app.put("/tasks/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const { title, description, status, start_date, due_date } = req.body;
+  const userId = req.user.userId;
+
+  // Валидация данных
+  if (!title || title.trim() === "") {
+    return res
+      .status(400)
+      .json({ message: "Название задачи не может быть пустым." });
+  }
+
+  const query = `
       UPDATE tasks
       SET title = ?, description = ?, status = ?, start_date = ?, due_date = ?, updated_at = NOW()
       WHERE id = ? AND user_id = ?
     `;
-  
-    db.query(
-      query,
-      [title, description, status, start_date, due_date, id, userId],
-      (err, results) => {
-        if (err) {
-          console.error('Ошибка обновления задачи:', err);
-          return res.status(500).json({ message: 'Ошибка сервера.' });
-        }
-  
-        if (results.affectedRows === 0) {
-          return res.status(404).json({ message: 'Задача не найдена.' });
-        }
-  
-        res.status(200).json({ message: 'Задача успешно обновлена.' });
+
+  db.query(
+    query,
+    [title, description, status, start_date, due_date, id, userId],
+    (err, results) => {
+      if (err) {
+        console.error("Ошибка обновления задачи:", err);
+        return res.status(500).json({ message: "Ошибка сервера." });
       }
-    );
-  });  
+
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ message: "Задача не найдена." });
+      }
+
+      res.status(200).json({ message: "Задача успешно обновлена." });
+    }
+  );
+});
 
 app.delete("/tasks/:id", authenticateToken, (req, res) => {
   const userId = req.user.userId; // Получаем userId из токена
@@ -589,6 +630,84 @@ app.delete("/tasks/:id", authenticateToken, (req, res) => {
       return res.status(404).send({ message: "Задача не найдена." });
     }
     res.send({ message: "Задача удалена." });
+  });
+});
+
+app.post("/cards", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
+  const { card_number, card_holder_name, expiration_date, cvv } = req.body;
+
+  const query = `INSERT INTO cards (user_id, card_number, card_holder_name, expiration_date, cvv) 
+                   VALUES (?, ?, ?, ?, ?)`;
+
+  db.query(
+    query,
+    [userId, card_number, card_holder_name, expiration_date, cvv],
+    (err, result) => {
+      if (err) {
+        console.error("Ошибка при добавлении карты:", err);
+        return res.status(500).send({ message: "Ошибка сервера." });
+      }
+      res.status(201).send({ message: "Карта успешно добавлена." });
+    }
+  );
+});
+
+app.get("/cards", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
+
+  const query = `SELECT * FROM cards WHERE user_id = ?`;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Ошибка получения карт:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res.send(results);
+  });
+});
+
+app.put("/cards/:id", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
+  const cardId = req.params.id; // Получаем ID карты
+  const { card_number, card_holder_name, expiration_date, cvv } = req.body;
+
+  const query = `UPDATE cards 
+                   SET card_number = ?, card_holder_name = ?, expiration_date = ?, cvv = ?,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE id = ? AND user_id = ?`;
+
+  db.query(
+    query,
+    [card_number, card_holder_name, expiration_date, cvv, cardId, userId],
+    (err, result) => {
+      if (err) {
+        console.error("Ошибка обновления карты:", err);
+        return res.status(500).send({ message: "Ошибка сервера." });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).send({ message: "Карта не найдена." });
+      }
+      res.send({ message: "Карта успешно обновлена." });
+    }
+  );
+});
+
+app.delete("/cards/:id", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Получаем userId из токена
+  const cardId = req.params.id; // Получаем ID карты
+
+  const query = `DELETE FROM cards WHERE id = ? AND user_id = ?`;
+
+  db.query(query, [cardId, userId], (err, result) => {
+    if (err) {
+      console.error("Ошибка удаления карты:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).send({ message: "Карта не найдена." });
+    }
+    res.send({ message: "Карта успешно удалена." });
   });
 });
 

@@ -1,16 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, Col, Row, Tab, Tabs, Modal, Button } from "react-bootstrap";
+import {
+  Card,
+  Col,
+  Row,
+  Tab,
+  Tabs,
+  Modal,
+  Button,
+  Dropdown,
+} from "react-bootstrap";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
+  registerables,
   PointElement,
   LineElement,
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 import axios from "axios";
 import styled from "styled-components";
@@ -23,6 +34,8 @@ import {
   FaUser,
   FaUserPlus,
   FaPlus,
+  FaEdit,
+  FaTrash,
 } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 
@@ -38,8 +51,10 @@ ChartJS.register(
 
 function Home() {
   const { t } = useTranslation();
+  ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler);
 
   const [user, setUser] = useState(null);
+  const [editTask, setEditTask] = useState(null);
   const [clients, setClients] = useState([]);
   const [incomeData, setIncomeData] = useState([]);
   const [expenseData, setExpenseData] = useState([]);
@@ -65,6 +80,21 @@ function Home() {
     }
     addTask(newTask);
     setNewTask({ title: "", description: "", status: "not_started" });
+    handleCloseModal();
+  };
+
+  const handleShowEditModal = (task) => {
+    setEditTask(task);
+    setShowModal(true);
+  };
+
+  const handleSaveEditTask = async () => {
+    if (!editTask.title) {
+      toast.error("Название задачи не может быть пустым.");
+      return;
+    }
+    await handleUpdateTask(editTask.id, editTask);
+    setEditTask(null);
     handleCloseModal();
   };
 
@@ -322,9 +352,9 @@ function Home() {
                 <Card.Body>
                   <Card.Title>Список клиентов</Card.Title>
                   <ClientList>
-                    {clients.map((client) => (
+                    {clients.map((client, index) => (
                       <CardDiv
-                        key={client.id}
+                        key={client.id || index}
                         onClick={() =>
                           handleCopyText(`${client.name}: ${client.phone}`)
                         }
@@ -342,9 +372,9 @@ function Home() {
                 <Card.Body>
                   <Card.Title>Список счетов</Card.Title>
                   <AccountList>
-                    {incomeData.map((account) => (
+                    {incomeData.map((account, index) => (
                       <CardDiv
-                        key={account.id}
+                        key={account.id || index}
                         onClick={() =>
                           handleCopyText(
                             `${account.description} - ${account.amount} ₽`
@@ -354,9 +384,9 @@ function Home() {
                         {account.description} - {account.amount} ₽
                       </CardDiv>
                     ))}
-                    {expenseData.map((account) => (
+                    {expenseData.map((account, index) => (
                       <CardDiv
-                        key={account.id}
+                        key={account.id || index}
                         onClick={() =>
                           handleCopyText(
                             `${account.description} - ${account.amount} ₽`
@@ -375,8 +405,8 @@ function Home() {
                 <Card.Body>
                   <Card.Title>Задачи</Card.Title>
                   <ClientList>
-                    {tasks.notStarted.map((task) => (
-                      <CardDiv key={task.id}>
+                    {tasks.notStarted.map((task, index) => (
+                      <CardDiv key={task.id || index}>
                         <h3>{task.title}</h3>
                         <p> {task.description}</p>
                       </CardDiv>
@@ -391,24 +421,55 @@ function Home() {
 
       <Tab eventKey="profile" title="Planner">
         <Row className="mt-4">
+          {/* Колонка для задач "Не начато" */}
           <Col md={4}>
             <Card>
               <Card.Body>
                 <Card.Title>Не начато</Card.Title>
-                {tasks.notStarted.map((task) => (
+                {tasks.notStarted.map((task, index) => (
                   <TaskDiv
-                    key={task.id}
+                    key={task.id || index}
                     onClick={() =>
                       handleUpdateTask(task.id, { status: "in_progress" })
                     }
                   >
                     <h3>{task.title}</h3>
-                    <p> {task.description}</p>
+                    <p>{task.description}</p>
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-success"
+                        size="sm"
+                        id="dropdown-menu-end"
+                      >
+                        Действия
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => deleteTask(task.id)}>
+                          <FaTrash />
+                          Удалить
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          onClick={() => handleShowEditModal(task)}
+                        >
+                          <FaEdit />
+                          Редактировать
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
                   </TaskDiv>
                 ))}
-                <TaskButton onClick={handleShowModal}>
-                  Добавить задачу
-                </TaskButton>
+
+                {/* Кнопка для добавления задачи */}
+                <TaskDiv
+                  onClick={handleShowModal}
+                  style={{
+                    cursor: "pointer",
+                    border: "1px dashed #ccc",
+                    padding: "10px",
+                  }}
+                >
+                  <FaPlus size={20} />
+                </TaskDiv>
               </Card.Body>
             </Card>
           </Col>
@@ -417,29 +478,51 @@ function Home() {
             <Card>
               <Card.Body>
                 <Card.Title>В процессе</Card.Title>
-                {tasks.inProgress.map((task) => (
+                {tasks.inProgress.map((task, index) => (
                   <TaskDiv
-                    key={task.id}
+                    key={task.id || index}
                     onClick={() =>
                       handleUpdateTask(task.id, { status: "completed" })
                     }
                   >
                     <h3>{task.title}</h3>
-                    <p> {task.description}</p>
+                    <p>{task.description}</p>
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-success"
+                        size="sm"
+                        id="dropdown-menu-end"
+                      >
+                        Действия
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => deleteTask(task.id)}>
+                          <FaTrash />
+                          Удалить
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          onClick={() => handleShowEditModal(task)}
+                        >
+                          <FaEdit />
+                          Редактировать
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
                   </TaskDiv>
                 ))}
               </Card.Body>
             </Card>
           </Col>
 
+          {/* Колонка для задач "Завершенные" */}
           <Col md={4}>
             <Card>
               <Card.Body>
                 <Card.Title>Завершенные</Card.Title>
-                {tasks.completed.map((task) => (
-                  <TaskDiv key={task.id} onClick={() => deleteTask(task.id)}>
+                {tasks.completed.map((task, index) => (
+                  <TaskDiv key={task.id || index} onClick={() => deleteTask(task.id)}>
                     <h3>{task.title}</h3>
-                    <p> {task.description}</p>
+                    <p>{task.description}</p>
                   </TaskDiv>
                 ))}
               </Card.Body>
@@ -450,7 +533,9 @@ function Home() {
           <Col md={12}>
             <Modal show={showModal} onHide={handleCloseModal}>
               <Modal.Header closeButton>
-                <Modal.Title>Добавить задачу</Modal.Title>
+                <Modal.Title>
+                  {editTask ? "Изменить задачу" : "Добавить задачу"}
+                </Modal.Title>
               </Modal.Header>
               <Modal.Body>
                 <form>
@@ -459,9 +544,11 @@ function Home() {
                     <input
                       type="text"
                       className="form-control"
-                      value={newTask.title}
+                      value={editTask ? editTask.title : newTask.title}
                       onChange={(e) =>
-                        setNewTask({ ...newTask, title: e.target.value })
+                        editTask
+                          ? setEditTask({ ...editTask, title: e.target.value })
+                          : setNewTask({ ...newTask, title: e.target.value })
                       }
                     />
                   </div>
@@ -470,9 +557,19 @@ function Home() {
                     <textarea
                       className="form-control"
                       rows="3"
-                      value={newTask.description}
+                      value={
+                        editTask ? editTask.description : newTask.description
+                      }
                       onChange={(e) =>
-                        setNewTask({ ...newTask, description: e.target.value })
+                        editTask
+                          ? setEditTask({
+                              ...editTask,
+                              description: e.target.value,
+                            })
+                          : setNewTask({
+                              ...newTask,
+                              description: e.target.value,
+                            })
                       }
                     />
                   </div>
@@ -480,9 +577,11 @@ function Home() {
                     <label>Статус</label>
                     <select
                       className="form-control"
-                      value={newTask.status}
+                      value={editTask ? editTask.status : newTask.status}
                       onChange={(e) =>
-                        setNewTask({ ...newTask, status: e.target.value })
+                        editTask
+                          ? setEditTask({ ...editTask, status: e.target.value })
+                          : setNewTask({ ...newTask, status: e.target.value })
                       }
                     >
                       <option value="not_started">Не начато</option>
@@ -496,8 +595,11 @@ function Home() {
                 <Button variant="secondary" onClick={handleCloseModal}>
                   Отмена
                 </Button>
-                <Button variant="success" onClick={handleAddTask}>
-                  Сохранить
+                <Button
+                  variant="success"
+                  onClick={editTask ? handleSaveEditTask : handleAddTask}
+                >
+                  {editTask ? "Сохранить изменения" : "Добавить"}
                 </Button>
               </Modal.Footer>
             </Modal>
@@ -521,18 +623,6 @@ const TaskDiv = styled.div`
   &:hover {
     background-color: rgb(168, 168, 168);
     color: white;
-  }
-`;
-
-const TaskButton = styled.button`
-  width: 100%;
-  background-color: #2ca01c;
-  border: none;
-  height: 50px;
-  color: white;
-  border-radius: 5px;
-  &:hover {
-    background-color: rgb(39, 134, 26);
   }
 `;
 
