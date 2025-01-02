@@ -22,7 +22,7 @@ import "jspdf-autotable";
 function Transactions() {
   const { t } = useTranslation();
   const [accounts, setAccounts] = useState([]);
-  const [user, setUser] = useState(null);
+  const [card, setcard] = useState(null);
   const [search, setSearch] = useState("");
   const [sortType, setSortType] = useState("client_name");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -65,12 +65,12 @@ function Transactions() {
         await Promise.all([
           apiRequest("http://localhost:5000/accounts"),
           apiRequest("http://localhost:5000/clients"),
-          apiRequest("http://localhost:5000/users"),
+          apiRequest("http://localhost:5000/cards"),
         ]);
       setAccounts(accountsResponse.data);
       setClients(clientsResponse.data);
       if (Array.isArray(userResponse.data) && userResponse.data.length > 0) {
-        setUser(userResponse.data[0]);
+        setcard(userResponse.data[0]);
       }
     } catch (error) {
       toast.error("Ошибка загрузки данных: " + error.message);
@@ -155,6 +155,30 @@ function Transactions() {
     <div>
       <ToastContainer />
       <h3 className="mb-4">Список транзакций</h3>
+      <Row
+        style={{
+          display: "flex",
+          marginBlockStart: "20px",
+          alignItems: "stretch",
+        }}
+      >
+        <Col md={3} style={{ display: "flex", flexDirection: "column" }}>
+          <Card style={{ flex: 1 }}>
+            <Card.Body>
+              <Card.Title>{t("dashboard.creditCard")}</Card.Title>
+              <p>
+                {t("dashboard.balance")}: {card?.balance || 0} ₽
+              </p>
+              <p>
+                {t("dashboard.name")}: {card?.card_holder_name || "Неизвестно"}
+              </p>
+              <p>
+                {t("dashboard.name")}: {card?.card_number || "Неизвестно"}
+              </p>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
       <SearchContainer>
         <input
           type="text"
@@ -202,41 +226,6 @@ function Transactions() {
           </button>
         </ButtonsGroup>
       </SearchContainer>
-      <Row
-        style={{
-          display: "flex",
-          marginBlockEnd: "20px",
-          alignItems: "stretch",
-        }}
-      >
-        <Col md={3} style={{ display: "flex", flexDirection: "column" }}>
-          <Card style={{ flex: 1 }}>
-            <Card.Body>
-              <Card.Title>{t("dashboard.creditCard")}</Card.Title>
-              <p>
-                {t("dashboard.balance")}: {user?.amount || 0} ₽
-              </p>
-              <p>
-                {t("dashboard.name")}: {user?.name || "Неизвестно"}
-              </p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3} style={{ display: "flex", flexDirection: "column" }}>
-          <Card style={{ flex: 1 }}>
-            <Card.Body
-              style={{
-                display: "flex",
-                justifyContent: "center", // Центрирование по горизонтали
-                alignItems: "center", // Центрирование по вертикали
-                fontSize: "30px",
-              }}
-            >
-              <FaPlus />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
       <StyledTableContainer>
         <AccountsTable
           accounts={filteredAccounts}
@@ -331,9 +320,10 @@ const StyledTable = styled.table`
 
 const SearchContainer = styled.div`
   height: fit-content;
-  width: 50%;
+  width: 70%;
   display: flex;
   margin-bottom: 20px;
+  margin-top: 20px;
 `;
 
 const ButtonsGroup = styled.div`

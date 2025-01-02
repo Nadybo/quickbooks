@@ -9,13 +9,13 @@ import {
   Modal,
   Button,
   Dropdown,
+  Form,
 } from "react-bootstrap";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  registerables,
   PointElement,
   LineElement,
   Title,
@@ -51,25 +51,42 @@ ChartJS.register(
 
 function Home() {
   const { t } = useTranslation();
-  ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler);
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Filler
+  );
 
-  const [user, setUser] = useState(null);
   const [editTask, setEditTask] = useState(null);
   const [clients, setClients] = useState([]);
   const [incomeData, setIncomeData] = useState([]);
   const [expenseData, setExpenseData] = useState([]);
+  const [onAddCard] = useState([]);
+  const [cards, setCards] = useState([]);
+  const [canAddSecondCard, setCanAddSecondCard] = useState(true);
   const [tasks, setTasks] = useState({
     notStarted: [],
     inProgress: [],
     completed: [],
   });
   const [showModal, setShowModal] = useState(false);
+  const [showCardModal, steCardModal] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
     status: "not_started",
   });
+  const [newCard, setNewCard] = useState({
+    card_number: "",
+    card_holder_name: "",
+    expiration_date: "",
+    cvv: "",
+  });
 
+  const handleCloseCardModal = () => steCardModal(false);
+  const handleShowCardModal = () => steCardModal(true);
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = () => setShowModal(true);
 
@@ -98,20 +115,20 @@ function Home() {
     handleCloseModal();
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewCard({
+      ...newCard,
+      [name]: value,
+    });
+  };
+
   const token = localStorage.getItem("userToken");
 
   // API запросы для получения данных
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Загружаем данные пользователя
-        const userResponse = await axios.get("http://localhost:5000/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (Array.isArray(userResponse.data) && userResponse.data.length > 0) {
-          setUser(userResponse.data[0]);
-        }
-
         const clientsResponse = await axios.get(
           "http://localhost:5000/clients",
           { headers: { Authorization: `Bearer ${token}` } }
@@ -123,6 +140,16 @@ function Home() {
           "http://localhost:5000/accounts",
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        const cardsResponse = await axios.get("http://localhost:5000/cards", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      
+        if (
+          Array.isArray(cardsResponse.data) &&
+          cardsResponse.data.length > 0
+        ) {
+          setCards(cardsResponse.data); // Устанавливаем весь массив карт
+        }
 
         // Фильтруем счета по категориям (расходы и доходы)
         const income = accountsResponse.data.filter(
@@ -143,6 +170,37 @@ function Home() {
 
     fetchData();
   }, [token]);
+
+  const handleAddCard = async () => {
+    try {
+      if (!newCard.expiration_date) {
+        toast.error("Пожалуйста, укажите срок действия карты.");
+        return;
+      }
+
+      const [year, month] = newCard.expiration_date.split("-");
+      const formattedExpirationDate = `${year}-${month}-31`;
+
+      const response = await axios.post(
+        "http://localhost:5000/cards",
+        {
+          ...newCard,
+          expiration_date: formattedExpirationDate,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+        }
+      );
+      onAddCard(response.data); // Передаем добавленную карту в родительский компонент
+      handleCloseCardModal(); // Закрываем модальное окно
+      toast.success("Карта успешно добавлено!")
+    } catch (error) {
+      console.error("Error adding card:", error);
+      toast.error("Ошибка при добавлении карты.");
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -264,6 +322,13 @@ function Home() {
     toast.success("Текст скопирован!");
   };
 
+  const addCard = (cardData) => {
+    setCards([...cards, cardData]); // Обновляем массив карт
+    if (cards.length === 0) {
+      setCanAddSecondCard(false); // Если добавили первую карту, выключаем возможность добавления второй
+    }
+  };
+
   return (
     <Tabs
       defaultActiveKey="home"
@@ -274,33 +339,38 @@ function Home() {
       <Tab eventKey="home" title="Home">
         <ScrollableContainer>
           <Row style={{ display: "flex", alignItems: "stretch" }}>
-            <Col md={3} style={{ display: "flex", flexDirection: "column" }}>
-              <Card style={{ flex: 1 }}>
-                <Card.Body>
-                  <Card.Title>{t("dashboard.creditCard")}</Card.Title>
-                  <p>
-                    {t("dashboard.balance")}: {user?.amount || 0} ₽
-                  </p>
-                  <p>
-                    {t("dashboard.name")}: {user?.name || "Неизвестно"}
-                  </p>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3} style={{ display: "flex", flexDirection: "column" }}>
-              <Card style={{ flex: 1 }}>
-                <Card.Body
-                  style={{
-                    display: "flex",
-                    justifyContent: "center", // Центрирование по горизонтали
-                    alignItems: "center", // Центрирование по вертикали
-                    fontSize: "30px",
-                  }}
+            {cards.length > 0 ? (
+              cards.map((card, index) => (
+                <Col
+                  md={6}
+                  key={index}
+                  style={{ display: "flex", flexDirection: "column" }}
                 >
-                  <FaPlus />
-                </Card.Body>
-              </Card>
-            </Col>
+                  <Card style={{ flex: 1 }}>
+                    <Card.Body>
+                      <Card.Title>{t("dashboard.creditCard")}</Card.Title>
+                      <p>
+                        {t("dashboard.balance")}: {card.balance} ₽
+                      </p>
+                      <p>
+                        {t("dashboard.cardNumber")}: {card.card_number}
+                      </p>
+                      <p>
+                        {t("dashboard.name")}:{" "}
+                        {card.card_holder_name || "Неизвестно"}
+                      </p>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))
+            ) : (
+              <Col md={6} style={{ display: "flex", flexDirection: "column" }}>
+                <Button variant="secondary" onClick={handleShowCardModal}>
+                  {t("dashboard.addSecondCard")}
+                </Button>
+              </Col>
+            )}
+
             <Col md={6} style={{ display: "flex", flexDirection: "column" }}>
               <Card style={{ flex: 1 }}>
                 <Card.Body>
@@ -416,6 +486,72 @@ function Home() {
               </Card>
             </Col>
           </Row>
+          <Row>
+            <Col md={12}>
+              <Modal show={showCardModal} onHide={handleCloseCardModal}>
+                <Modal.Header closeButton>
+                  <Modal.Title>Добавить карту</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                  <Form>
+                    <Form.Group controlId="formCardNumber">
+                      <Form.Label>Номер карты</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="card_number"
+                        value={newCard.card_number}
+                        onChange={handleInputChange}
+                        maxLength={16}
+                        required
+                      />
+                    </Form.Group>
+
+                    <Form.Group controlId="formCardHolderName">
+                      <Form.Label>Имя владельца карты</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="card_holder_name"
+                        value={newCard.card_holder_name}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </Form.Group>
+
+                    <Form.Group controlId="formExpirationDate">
+                      <Form.Label>Срок действия</Form.Label>
+                      <Form.Control
+                        type="date"
+                        name="expiration_date"
+                        value={newCard.expiration_date}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </Form.Group>
+
+                    <Form.Group controlId="formCVV">
+                      <Form.Label>CVV</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="cvv"
+                        value={newCard.cvv}
+                        onChange={handleInputChange}
+                        maxLength={3}
+                        required
+                      />
+                    </Form.Group>
+                  </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button variant="secondary" onClick={handleCloseCardModal}>
+                    Отмена
+                  </Button>
+                  <Button variant="primary" onClick={handleAddCard}>
+                    Добавить карту
+                  </Button>
+                </Modal.Footer>
+              </Modal>
+            </Col>
+          </Row>
         </ScrollableContainer>
       </Tab>
 
@@ -520,7 +656,10 @@ function Home() {
               <Card.Body>
                 <Card.Title>Завершенные</Card.Title>
                 {tasks.completed.map((task, index) => (
-                  <TaskDiv key={task.id || index} onClick={() => deleteTask(task.id)}>
+                  <TaskDiv
+                    key={task.id || index}
+                    onClick={() => deleteTask(task.id)}
+                  >
                     <h3>{task.title}</h3>
                     <p>{task.description}</p>
                   </TaskDiv>
