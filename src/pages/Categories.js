@@ -226,7 +226,8 @@ export default Categories;
 
 // Стили
 const StyledTableContainer = styled.div`
-  max-height: 680px;
+  max-height: 700px;
+  min-height: 700px;
   overflow-y: auto;
   border: 1px solid #dee2e6;
   border-radius: 4px;

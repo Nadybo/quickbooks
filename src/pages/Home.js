@@ -22,6 +22,7 @@ import {
   FaFileExport,
   FaUser,
   FaUserPlus,
+  FaPlus,
 } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 
@@ -153,16 +154,27 @@ function Home() {
     }
   };
 
-  const updateTask = async (taskId, updatedData) => {
+  const handleUpdateTask = async (taskId, updatedTask) => {
+    if (!updatedTask.title || updatedTask.title.trim() === "") {
+      toast.error("Название задачи не может быть пустым.");
+      return;
+    }
+
     try {
-      await axios.put(`http://localhost:5000/tasks/${taskId}`, updatedData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchTasks();
-      toast.success("Задача обновлена!");
+      const response = await axios.put(
+        `http://localhost:5000/tasks/${taskId}`,
+        updatedTask,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (response.status === 200) {
+        toast.success("Задача успешно обновлена!");
+        fetchTasks(); // Перезагрузка списка задач
+      }
     } catch (error) {
-      console.error("Ошибка при обновлении задачи:", error);
-      toast.error("Ошибка при обновлении задачи.");
+      console.error("Ошибка обновления задачи:", error);
+      toast.error("Не удалось обновить задачу.");
     }
   };
 
@@ -232,7 +244,7 @@ function Home() {
       <Tab eventKey="home" title="Home">
         <ScrollableContainer>
           <Row style={{ display: "flex", alignItems: "stretch" }}>
-            <Col md={6} style={{ display: "flex", flexDirection: "column" }}>
+            <Col md={3} style={{ display: "flex", flexDirection: "column" }}>
               <Card style={{ flex: 1 }}>
                 <Card.Body>
                   <Card.Title>{t("dashboard.creditCard")}</Card.Title>
@@ -242,6 +254,20 @@ function Home() {
                   <p>
                     {t("dashboard.name")}: {user?.name || "Неизвестно"}
                   </p>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={3} style={{ display: "flex", flexDirection: "column" }}>
+              <Card style={{ flex: 1 }}>
+                <Card.Body
+                  style={{
+                    display: "flex",
+                    justifyContent: "center", // Центрирование по горизонтали
+                    alignItems: "center", // Центрирование по вертикали
+                    fontSize: "30px",
+                  }}
+                >
+                  <FaPlus />
                 </Card.Body>
               </Card>
             </Col>
@@ -303,7 +329,7 @@ function Home() {
                           handleCopyText(`${client.name}: ${client.phone}`)
                         }
                       >
-                        {client.name}: {client.phone}
+                        {client.name} - {client.company_name}
                       </CardDiv>
                     ))}
                   </ClientList>
@@ -347,8 +373,15 @@ function Home() {
             <Col md={6}>
               <Card>
                 <Card.Body>
-                  <Card.Title>графика</Card.Title>
-                  <AccountList></AccountList>
+                  <Card.Title>Задачи</Card.Title>
+                  <ClientList>
+                    {tasks.notStarted.map((task) => (
+                      <CardDiv key={task.id}>
+                        <h3>{task.title}</h3>
+                        <p> {task.description}</p>
+                      </CardDiv>
+                    ))}
+                  </ClientList>
                 </Card.Body>
               </Card>
             </Col>
@@ -366,20 +399,16 @@ function Home() {
                   <TaskDiv
                     key={task.id}
                     onClick={() =>
-                      updateTask(task.id, { status: "in_progress" })
+                      handleUpdateTask(task.id, { status: "in_progress" })
                     }
                   >
-                    {task.title}
-                    {task.description}
+                    <h3>{task.title}</h3>
+                    <p> {task.description}</p>
                   </TaskDiv>
                 ))}
-                <Button
-                  variant="primary"
-                  onClick={handleShowModal}
-                  className="mb-3"
-                >
+                <TaskButton onClick={handleShowModal}>
                   Добавить задачу
-                </Button>
+                </TaskButton>
               </Card.Body>
             </Card>
           </Col>
@@ -391,10 +420,12 @@ function Home() {
                 {tasks.inProgress.map((task) => (
                   <TaskDiv
                     key={task.id}
-                    onClick={() => updateTask(task.id, { status: "completed" })}
+                    onClick={() =>
+                      handleUpdateTask(task.id, { status: "completed" })
+                    }
                   >
-                    {task.title}
-                    {task.description}
+                    <h3>{task.title}</h3>
+                    <p> {task.description}</p>
                   </TaskDiv>
                 ))}
               </Card.Body>
@@ -407,8 +438,8 @@ function Home() {
                 <Card.Title>Завершенные</Card.Title>
                 {tasks.completed.map((task) => (
                   <TaskDiv key={task.id} onClick={() => deleteTask(task.id)}>
-                    {task.title}
-                    {task.description}
+                    <h3>{task.title}</h3>
+                    <p> {task.description}</p>
                   </TaskDiv>
                 ))}
               </Card.Body>
@@ -480,14 +511,28 @@ function Home() {
 export default Home;
 
 const TaskDiv = styled.div`
- padding: 5px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
   background-color: rgb(231, 235, 231);
   border-radius: 5px;
   margin-bottom: 5px;
   cursor: pointer;
   &:hover {
-    background-color: #2ca01c;
+    background-color: rgb(168, 168, 168);
     color: white;
+  }
+`;
+
+const TaskButton = styled.button`
+  width: 100%;
+  background-color: #2ca01c;
+  border: none;
+  height: 50px;
+  color: white;
+  border-radius: 5px;
+  &:hover {
+    background-color: rgb(39, 134, 26);
   }
 `;
 

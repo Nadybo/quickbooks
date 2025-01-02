@@ -527,7 +527,7 @@ app.post("/tasks", authenticateToken, (req, res) => {
 });
 
 app.get("/tasks", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
+  const userId = req.user.userId; 
 
   const query = `SELECT * FROM tasks WHERE user_id = ?`;
 
@@ -540,30 +540,39 @@ app.get("/tasks", authenticateToken, (req, res) => {
   });
 });
 
-app.put("/tasks/:id", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
-  const taskId = req.params.id;
-  const { title, description, status, start_date, due_date } = req.body;
-
-  const query = `UPDATE tasks 
-                   SET title = ?, description = ?, status = ?, start_date = ?, due_date = ?, updated_at = NOW() 
-                   WHERE id = ? AND user_id = ?`;
-
-  db.query(
-    query,
-    [title, description, status, start_date, due_date, taskId, userId],
-    (err, result) => {
-      if (err) {
-        console.error("Ошибка обновления задачи:", err);
-        return res.status(500).send({ message: "Ошибка сервера." });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).send({ message: "Задача не найдена." });
-      }
-      res.send({ message: "Задача обновлена." });
+app.put('/tasks/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const { title, description, status, start_date, due_date } = req.body;
+    const userId = req.user.userId;
+  
+    // Валидация данных
+    if (!title || title.trim() === '') {
+      return res.status(400).json({ message: "Название задачи не может быть пустым." });
     }
-  );
-});
+  
+    const query = `
+      UPDATE tasks
+      SET title = ?, description = ?, status = ?, start_date = ?, due_date = ?, updated_at = NOW()
+      WHERE id = ? AND user_id = ?
+    `;
+  
+    db.query(
+      query,
+      [title, description, status, start_date, due_date, id, userId],
+      (err, results) => {
+        if (err) {
+          console.error('Ошибка обновления задачи:', err);
+          return res.status(500).json({ message: 'Ошибка сервера.' });
+        }
+  
+        if (results.affectedRows === 0) {
+          return res.status(404).json({ message: 'Задача не найдена.' });
+        }
+  
+        res.status(200).json({ message: 'Задача успешно обновлена.' });
+      }
+    );
+  });  
 
 app.delete("/tasks/:id", authenticateToken, (req, res) => {
   const userId = req.user.userId; // Получаем userId из токена

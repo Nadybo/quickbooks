@@ -1,40 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { FaSortAlphaDown, FaSortAlphaUp, FaFilter, FaFileExcel, FaFileCsv, FaFilePdf } from 'react-icons/fa';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import * as XLSX from 'xlsx';
-import Papa from 'papaparse';
-import axios from 'axios';
-import jsPDF from 'jspdf';
-import "jspdf-autotable"; 
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import {
+  FaSortAlphaDown,
+  FaSortAlphaUp,
+  FaFilter,
+  FaFileExcel,
+  FaFileCsv,
+  FaFilePdf,
+  FaPlus,
+} from "react-icons/fa";
+import { Card, Col, Row, Tab, Tabs, Modal, Button } from "react-bootstrap";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useTranslation } from "react-i18next";
+import * as XLSX from "xlsx";
+import Papa from "papaparse";
+import axios from "axios";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 function Transactions() {
+  const { t } = useTranslation();
   const [accounts, setAccounts] = useState([]);
-  const [search, setSearch] = useState('');
-  const [sortType, setSortType] = useState('client_name');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [user, setUser] = useState(null);
+  const [search, setSearch] = useState("");
+  const [sortType, setSortType] = useState("client_name");
+  const [sortOrder, setSortOrder] = useState("asc");
   const [clients, setClients] = useState([]);
   const token = localStorage.getItem("userToken");
   const [statusFilter, setStatusFilter] = useState("paid"); // Default filter to "paid"
 
   const filterAndSortAccounts = (accounts, search, sortType, sortOrder) => {
     const filtered = accounts.filter((account) =>
-      ['client_name', 'description', 'amount', 'status'].some((key) =>
+      ["client_name", "description", "amount", "status"].some((key) =>
         account[key]?.toString().toLowerCase().includes(search.toLowerCase())
       )
     );
 
     return filtered.sort((a, b) => {
-      const order = sortOrder === 'asc' ? 1 : -1;
+      const order = sortOrder === "asc" ? 1 : -1;
       switch (sortType) {
-        case 'client_name':
-        case 'status':
-        case 'category_name':
+        case "client_name":
+        case "status":
+        case "category_name":
           return a[sortType]?.localeCompare(b[sortType]) * order;
-        case 'amount':
+        case "amount":
           return (a[sortType] - b[sortType]) * order;
-        case 'date':
+        case "date":
           return (new Date(a.created_at) - new Date(b.created_at)) * order;
         default:
           return 0;
@@ -49,14 +61,19 @@ function Transactions() {
 
   const fetchAllData = async () => {
     try {
-      const [accountsResponse, clientsResponse] = await Promise.all([
-        apiRequest('http://localhost:5000/accounts'),
-        apiRequest('http://localhost:5000/clients')
-      ]);
+      const [accountsResponse, clientsResponse, userResponse] =
+        await Promise.all([
+          apiRequest("http://localhost:5000/accounts"),
+          apiRequest("http://localhost:5000/clients"),
+          apiRequest("http://localhost:5000/users"),
+        ]);
       setAccounts(accountsResponse.data);
       setClients(clientsResponse.data);
+      if (Array.isArray(userResponse.data) && userResponse.data.length > 0) {
+        setUser(userResponse.data[0]);
+      }
     } catch (error) {
-      toast.error('Ошибка загрузки данных: ' + error.message);
+      toast.error("Ошибка загрузки данных: " + error.message);
     }
   };
 
@@ -64,7 +81,7 @@ function Transactions() {
     fetchAllData();
   }, []);
 
-  const apiRequest = (url, method = 'GET', data = null) => {
+  const apiRequest = (url, method = "GET", data = null) => {
     const config = {
       method,
       url,
@@ -75,11 +92,11 @@ function Transactions() {
   };
 
   // Добавление имени клиента в объект account
-  const updatedAccounts = accounts.map(account => {
-    const client = clients.find(client => client.id === account.client_id);
+  const updatedAccounts = accounts.map((account) => {
+    const client = clients.find((client) => client.id === account.client_id);
     return {
       ...account,
-      client_name: client ? client.name : 'Неизвестен', // Если клиента нет, ставим 'Неизвестен'
+      client_name: client ? client.name : "Неизвестен", // Если клиента нет, ставим 'Неизвестен'
     };
   });
 
@@ -99,33 +116,39 @@ function Transactions() {
 
   const exportToCSV = () => {
     const csvData = Papa.unparse(filteredAccounts);
-    const blob = new Blob([csvData], { type: 'text/csv' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvData], { type: "text/csv" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = 'accounts.csv';
+    link.download = "accounts.csv";
     link.click();
   };
 
   const exportToXLSX = () => {
     const ws = XLSX.utils.json_to_sheet(filteredAccounts);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Accounts');
-    XLSX.writeFile(wb, 'accounts.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, "Accounts");
+    XLSX.writeFile(wb, "accounts.xlsx");
   };
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    
-    doc.setFont("helvetica", "14"); 
-    doc.text('Список оплаченных счетов', 20, 10);
+
+    doc.setFont("helvetica", "14");
+    doc.text("Список оплаченных счетов", 20, 10);
     let yPosition = 20;
-  
+
     filteredAccounts.forEach((account, index) => {
       yPosition += 10;
-      doc.text(`${account.client_name} - ${account.amount} - ${statusMapping[account.status]}`, 20, yPosition);
+      doc.text(
+        `${account.client_name} - ${account.amount} - ${
+          statusMapping[account.status]
+        }`,
+        20,
+        yPosition
+      );
     });
-  
-    doc.save('accounts.pdf');
+
+    doc.save("accounts.pdf");
   };
 
   return (
@@ -144,17 +167,17 @@ function Transactions() {
           <button
             className="btn btn-outline-success me-2"
             onClick={() => {
-              setSortType('client_name');
-              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              setSortType("client_name");
+              setSortOrder(sortOrder === "asc" ? "desc" : "asc");
             }}
           >
-            {sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
+            {sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
           </button>
           <button
             className="btn btn-outline-success me-2"
             onClick={() => {
-              setSortType('date');
-              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              setSortType("date");
+              setSortOrder(sortOrder === "asc" ? "desc" : "asc");
             }}
           >
             <FaFilter />
@@ -171,11 +194,49 @@ function Transactions() {
           >
             <FaFileExcel />
           </button>
-          <button className="btn btn-outline-success me-2" onClick={exportToPDF}>
+          <button
+            className="btn btn-outline-success me-2"
+            onClick={exportToPDF}
+          >
             <FaFilePdf />
           </button>
         </ButtonsGroup>
       </SearchContainer>
+      <Row
+        style={{
+          display: "flex",
+          marginBlockEnd: "20px",
+          alignItems: "stretch",
+        }}
+      >
+        <Col md={3} style={{ display: "flex", flexDirection: "column" }}>
+          <Card style={{ flex: 1 }}>
+            <Card.Body>
+              <Card.Title>{t("dashboard.creditCard")}</Card.Title>
+              <p>
+                {t("dashboard.balance")}: {user?.amount || 0} ₽
+              </p>
+              <p>
+                {t("dashboard.name")}: {user?.name || "Неизвестно"}
+              </p>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3} style={{ display: "flex", flexDirection: "column" }}>
+          <Card style={{ flex: 1 }}>
+            <Card.Body
+              style={{
+                display: "flex",
+                justifyContent: "center", // Центрирование по горизонтали
+                alignItems: "center", // Центрирование по вертикали
+                fontSize: "30px",
+              }}
+            >
+              <FaPlus />
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
       <StyledTableContainer>
         <AccountsTable
           accounts={filteredAccounts}
@@ -199,19 +260,30 @@ const AccountsTable = ({ accounts, onSort, sortType, sortOrder }) => (
   <StyledTable className="table table-hover">
     <thead>
       <tr>
-        <th onClick={() => onSort('client_name')} style={{ cursor: 'pointer' }}>
-          Имя клиента {sortType === 'client_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        <th onClick={() => onSort("client_name")} style={{ cursor: "pointer" }}>
+          Имя клиента{" "}
+          {sortType === "client_name" &&
+            (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
-        <th onClick={() => onSort('amount')} style={{ cursor: 'pointer' }}>
-          Сумма {sortType === 'amount' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        <th onClick={() => onSort("amount")} style={{ cursor: "pointer" }}>
+          Сумма{" "}
+          {sortType === "amount" &&
+            (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
         <th>Статус</th>
         <th>Описание</th>
-        <th onClick={() => onSort('category_name')} style={{ cursor: 'pointer' }}>
-          Категория {sortType === 'category_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        <th
+          onClick={() => onSort("category_name")}
+          style={{ cursor: "pointer" }}
+        >
+          Категория{" "}
+          {sortType === "category_name" &&
+            (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
-        <th onClick={() => onSort('date')} style={{ cursor: 'pointer' }}>
-          Дата создания {sortType === 'date' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+        <th onClick={() => onSort("date")} style={{ cursor: "pointer" }}>
+          Дата создания{" "}
+          {sortType === "date" &&
+            (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
       </tr>
     </thead>
@@ -259,7 +331,7 @@ const StyledTable = styled.table`
 
 const SearchContainer = styled.div`
   height: fit-content;
-  width: 60%;
+  width: 50%;
   display: flex;
   margin-bottom: 20px;
 `;

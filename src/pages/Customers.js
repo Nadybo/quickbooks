@@ -1,18 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { FaTrash, FaEdit, FaSortAlphaDown, FaSortAlphaUp, FaUserPlus, FaFilter } from 'react-icons/fa';
-import { ToastContainer, toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import {
+  FaTrash,
+  FaEdit,
+  FaSortAlphaDown,
+  FaSortAlphaUp,
+  FaUserPlus,
+  FaFilter,
+} from "react-icons/fa";
+import { ToastContainer, toast } from "react-toastify";
 import { Modal, Button, Form, Dropdown } from "react-bootstrap";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
 function Customers() {
   const [clients, setClients] = useState([]);
-  const [search, setSearch] = useState('');
-  const [sortType, setSortType] = useState('name');
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [showModal, setShowModal] = useState(false); 
-  const [isEditMode, setIsEditMode] = useState(false); 
+  const [search, setSearch] = useState("");
+  const [sortType, setSortType] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [showModal, setShowModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [clientData, setClientData] = useState({
     name: "",
@@ -22,7 +29,7 @@ function Customers() {
     address: "",
     type: "client",
   });
-  const token = localStorage.getItem("userToken"); 
+  const token = localStorage.getItem("userToken");
 
   const handleShowModal = (client = null) => {
     setIsEditMode(!!client);
@@ -55,22 +62,18 @@ function Customers() {
           clientData,
           {
             headers: {
-              Authorization: `Bearer ${token}` // Добавляем токен в заголовок
-            }
+              Authorization: `Bearer ${token}`, // Добавляем токен в заголовок
+            },
           }
         );
         toast.success("Клиент успешно обновлен!");
       } else {
         // Добавление нового клиента
-        await axios.post(
-          "http://localhost:5000/clients",
-          clientData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
+        await axios.post("http://localhost:5000/clients", clientData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         toast.success("Клиент успешно добавлен!");
       }
       handleCloseModal();
@@ -86,53 +89,53 @@ function Customers() {
   // Получение данных с сервера
   const fetchClients = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/clients', {
+      const response = await axios.get("http://localhost:5000/clients", {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       setClients(response.data);
     } catch (error) {
-      notifyError('Ошибка загрузки данных: ' + error.message);
+      notifyError("Ошибка загрузки данных: " + error.message);
     }
   };
 
   useEffect(() => {
     fetchClients();
-  }, []); 
-  
-  const deleteClient = async (id) => {
+  }, []);
 
+  const deleteClient = async (id) => {
     try {
       await axios.delete(`http://localhost:5000/clients/${id}`, {
         headers: {
-          Authorization: `Bearer ${token}` // Добавляем токен в заголовок
-        }
+          Authorization: `Bearer ${token}`, // Добавляем токен в заголовок
+        },
       });
-      toast.success('Клиент успешно удален!');
+      toast.success("Клиент успешно удален!");
       setClients(clients.filter((client) => client.id !== id));
     } catch (error) {
-      notifyError('Ошибка удаления клиента: ' + error.message);
+      notifyError("Ошибка удаления клиента: " + error.message);
     }
   };
 
   // Сортировка и фильтрация
   const filteredClients = clients
-    .filter((client) =>
-      client.name.toLowerCase().includes(search.toLowerCase()) ||
-      client.email.toLowerCase().includes(search.toLowerCase()) ||
-      client.phone.includes(search) ||
-      client.type.toLowerCase().includes(search.toLowerCase())
+    .filter(
+      (client) =>
+        client.name.toLowerCase().includes(search.toLowerCase()) ||
+        client.email.toLowerCase().includes(search.toLowerCase()) ||
+        client.phone.includes(search) ||
+        client.type.toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => {
-      if (sortType === 'name') {
-        return sortOrder === 'asc'
+      if (sortType === "name") {
+        return sortOrder === "asc"
           ? a.name.localeCompare(b.name)
           : b.name.localeCompare(a.name);
-      } else if (sortType === 'date') {
+      } else if (sortType === "date") {
         const dateA = new Date(a.created_at);
         const dateB = new Date(b.created_at);
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
       }
       return 0;
     });
@@ -149,23 +152,26 @@ function Customers() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="btn btn-outline-success me-2"  onClick={() => handleShowModal()}>
-        <FaUserPlus />
+        <button
+          className="btn btn-outline-success me-2"
+          onClick={() => handleShowModal()}
+        >
+          <FaUserPlus />
         </button>
         <button
           className="btn btn-outline-success me-2"
           onClick={() => {
-            setSortType('name');
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+            setSortType("name");
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
           }}
         >
-          {sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
+          {sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
         </button>
         <button
           className="btn btn-outline-success me-2"
           onClick={() => {
-            setSortType('date');
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+            setSortType("date");
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
           }}
         >
           <FaFilter />
@@ -173,31 +179,63 @@ function Customers() {
       </SearchContainer>
       <StyledTableContainer>
         <StyledTable className="table table-hover">
-        <thead>
+          <thead>
             <tr>
-              <th onClick={() => {
-                setSortType('name');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}>
-                Имя {sortType === 'name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+              <th
+                onClick={() => {
+                  setSortType("name");
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                }}
+              >
+                Имя{" "}
+                {sortType === "name" &&
+                  (sortOrder === "asc" ? (
+                    <FaSortAlphaDown />
+                  ) : (
+                    <FaSortAlphaUp />
+                  ))}
               </th>
-              <th onClick={() => {
-                setSortType('company_name');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}>
-                Компания {sortType === 'company_name' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+              <th
+                onClick={() => {
+                  setSortType("company_name");
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                }}
+              >
+                Компания{" "}
+                {sortType === "company_name" &&
+                  (sortOrder === "asc" ? (
+                    <FaSortAlphaDown />
+                  ) : (
+                    <FaSortAlphaUp />
+                  ))}
               </th>
-              <th onClick={() => {
-                setSortType('phone');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}>
-                Телефон {sortType === 'phone' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+              <th
+                onClick={() => {
+                  setSortType("phone");
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                }}
+              >
+                Телефон{" "}
+                {sortType === "phone" &&
+                  (sortOrder === "asc" ? (
+                    <FaSortAlphaDown />
+                  ) : (
+                    <FaSortAlphaUp />
+                  ))}
               </th>
-              <th onClick={() => {
-                setSortType('date');
-                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-              }}>
-                Дата создания {sortType === 'date' && (sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
+              <th
+                onClick={() => {
+                  setSortType("date");
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                }}
+              >
+                Дата создания{" "}
+                {sortType === "date" &&
+                  (sortOrder === "asc" ? (
+                    <FaSortAlphaDown />
+                  ) : (
+                    <FaSortAlphaUp />
+                  ))}
               </th>
               <th>Действия</th>
             </tr>
@@ -210,21 +248,25 @@ function Customers() {
                 <td>{client.phone}</td>
                 <td>{new Date(client.created_at).toLocaleDateString()}</td>
                 <td>
-                <Dropdown>
-                  <Dropdown.Toggle variant="outline-success" size="sm" id="dropdown-basic">
-                    Действия
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu>
-                    <Dropdown.Item onClick={() => deleteClient(client.id)}>
-                    <FaTrash />
-                    Удалить
-                    </Dropdown.Item>
-                    <Dropdown.Item onClick={() => handleShowModal(client)}>
-                    <FaEdit />
-                    Редактировать
-                    </Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
+                  <Dropdown>
+                    <Dropdown.Toggle
+                      variant="outline-success"
+                      size="sm"
+                      id="dropdown-menu-end"
+                    >
+                      Действия
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => deleteClient(client.id)}>
+                        <FaTrash />
+                        Удалить
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleShowModal(client)}>
+                        <FaEdit />
+                        Редактировать
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
                 </td>
               </tr>
             ))}
@@ -233,7 +275,9 @@ function Customers() {
 
         <Modal show={showModal} onHide={handleCloseModal}>
           <Modal.Header closeButton>
-            <Modal.Title>{isEditMode ? "Редактировать клиента" : "Добавить клиента"}</Modal.Title>
+            <Modal.Title>
+              {isEditMode ? "Редактировать клиента" : "Добавить клиента"}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
@@ -318,7 +362,8 @@ export default Customers;
 
 // Стили таблицы и контейнера
 const StyledTableContainer = styled.div`
-  max-height: 680px;
+  max-height: 700px;
+  min-height: 700px;
   overflow-y: auto;
   border: 1px solid #dee2e6;
   border-radius: 4px;
@@ -345,8 +390,8 @@ const StyledTable = styled.table`
 `;
 
 const SearchContainer = styled.div`
- height: fit-content;
- width: 60%;
- display: flex;
- margin-bottom: 20px;
+  height: fit-content;
+  width: 60%;
+  display: flex;
+  margin-bottom: 20px;
 `;

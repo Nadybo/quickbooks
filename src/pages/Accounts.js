@@ -296,27 +296,30 @@ const AccountsTable = ({ accounts, onEdit, onDelete, onSort, sortType, sortOrder
           <td>{account.category_name}</td>
           <td>{new Date(account.created_at).toLocaleDateString()}</td>
           <td>
-            <Dropdown>
-              <Dropdown.Toggle variant="outline-success" size="sm" id="dropdown-basic">
-                Действия
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item onClick={() => onEdit(account)}>
-                  <FaEdit className="me-2" />
-                  Редактировать
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => onDelete(account.account_id)}>
-                  <FaTrash className="me-2" />
-                  Удалить
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            {account.status !== "paid" && ( // Условие для отображения действий
+              <Dropdown>
+                <Dropdown.Toggle variant="outline-success" size="sm" id="dropdown-basic">
+                  Действия
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={() => onEdit(account)}>
+                    <FaEdit className="me-2" />
+                    Редактировать
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => onDelete(account.account_id)}>
+                    <FaTrash className="me-2" />
+                    Удалить
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            )}
           </td>
         </tr>
       ))}
     </tbody>
   </StyledTable>
 );
+
 
 
 
@@ -403,7 +406,8 @@ const AccountModal = ({ show, onHide, accountData, clients, categories, onChange
 
 // Стили
 const StyledTableContainer = styled.div`
-  max-height: 680px;
+  max-height: 700px;
+  min-height: 700px;
   overflow-y: auto;
   border: 1px solid #dee2e6;
   border-radius: 4px;
