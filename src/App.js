@@ -9,8 +9,6 @@ import Customers from './pages/Customers';
 import Transactions from './pages/Transactions';
 import RegisterForm from './pages/Register';
 import LoginPage from './pages/Login';
-import Invoices from './pages/Invoices';
-import Payments from './pages/Payments';
 import Categories from './pages/Categories';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -115,22 +113,6 @@ function App() {
                   </PrivateRoute>
                 }
               />
-               {/* <Route
-                path="/invoices"
-                element={
-                  <PrivateRoute isAuthenticated={isAuthenticated}>
-                    <Invoices />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/payments"
-                element={
-                  <PrivateRoute isAuthenticated={isAuthenticated}>
-                    <Payments />
-                  </PrivateRoute>
-                }
-              /> */}
               <Route
                 path="/categories"
                 element={

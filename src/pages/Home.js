@@ -63,9 +63,12 @@ function Home() {
   const [clients, setClients] = useState([]);
   const [incomeData, setIncomeData] = useState([]);
   const [expenseData, setExpenseData] = useState([]);
+  const handleCloseCardModal = () => steCardModal(false);
+  const handleShowCardModal = () => steCardModal(true);
+  const handleCloseModal = () => setShowModal(false);
+  const handleShowModal = () => setShowModal(true);
   const [onAddCard] = useState([]);
   const [cards, setCards] = useState([]);
-  const [canAddSecondCard, setCanAddSecondCard] = useState(true);
   const [tasks, setTasks] = useState({
     notStarted: [],
     inProgress: [],
@@ -84,11 +87,6 @@ function Home() {
     expiration_date: "",
     cvv: "",
   });
-
-  const handleCloseCardModal = () => steCardModal(false);
-  const handleShowCardModal = () => steCardModal(true);
-  const handleCloseModal = () => setShowModal(false);
-  const handleShowModal = () => setShowModal(true);
 
   const handleAddTask = () => {
     if (!newTask.title) {
@@ -125,7 +123,6 @@ function Home() {
 
   const token = localStorage.getItem("userToken");
 
-  // API запросы для получения данных
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -143,15 +140,14 @@ function Home() {
         const cardsResponse = await axios.get("http://localhost:5000/cards", {
           headers: { Authorization: `Bearer ${token}` },
         });
-      
+
         if (
           Array.isArray(cardsResponse.data) &&
           cardsResponse.data.length > 0
         ) {
-          setCards(cardsResponse.data); // Устанавливаем весь массив карт
+          setCards(cardsResponse.data);
         }
 
-        // Фильтруем счета по категориям (расходы и доходы)
         const income = accountsResponse.data.filter(
           (account) => account.status === "paid" && account.category_id === 2
         );
@@ -195,7 +191,7 @@ function Home() {
       );
       onAddCard(response.data); // Передаем добавленную карту в родительский компонент
       handleCloseCardModal(); // Закрываем модальное окно
-      toast.success("Карта успешно добавлено!")
+      toast.success("Карта успешно добавлено!");
     } catch (error) {
       console.error("Error adding card:", error);
       toast.error("Ошибка при добавлении карты.");
@@ -279,7 +275,6 @@ function Home() {
     }
   };
 
-  // Данные для графика доходов
   const incomeChartData = {
     labels: incomeData.map((account) =>
       new Date(account.created_at).toLocaleDateString()
@@ -295,7 +290,6 @@ function Home() {
     ],
   };
 
-  // Данные для графика расходов
   const expenseChartData = {
     labels: expenseData.map((account) =>
       new Date(account.created_at).toLocaleDateString()
@@ -320,13 +314,6 @@ function Home() {
     document.execCommand("copy");
     document.body.removeChild(textArea);
     toast.success("Текст скопирован!");
-  };
-
-  const addCard = (cardData) => {
-    setCards([...cards, cardData]); // Обновляем массив карт
-    if (cards.length === 0) {
-      setCanAddSecondCard(false); // Если добавили первую карту, выключаем возможность добавления второй
-    }
   };
 
   return (

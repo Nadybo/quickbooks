@@ -7,9 +7,8 @@ import {
   FaFileExcel,
   FaFileCsv,
   FaFilePdf,
-  FaPlus,
 } from "react-icons/fa";
-import { Card, Col, Row, Tab, Tabs, Modal, Button } from "react-bootstrap";
+import { Card, Col, Row } from "react-bootstrap";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
@@ -28,7 +27,7 @@ function Transactions() {
   const [sortOrder, setSortOrder] = useState("asc");
   const [clients, setClients] = useState([]);
   const token = localStorage.getItem("userToken");
-  const [statusFilter, setStatusFilter] = useState("paid"); // Default filter to "paid"
+  const [statusFilter] = useState("paid"); // Default filter to "paid"
 
   const filterAndSortAccounts = (accounts, search, sortType, sortOrder) => {
     const filtered = accounts.filter((account) =>

@@ -13,6 +13,7 @@ const port = 5000;
 app.use(cors());
 app.use(bodyParser.json());
 
+
 const db = mysql.createConnection({
   host: "127.0.0.1",
   user: "root",
@@ -28,7 +29,6 @@ db.connect((err) => {
   }
 });
 
-// Функция для аутентификации токена
 function authenticateToken(req, res, next) {
   const token = req.headers["authorization"]?.split(" ")[1];
 
@@ -41,12 +41,11 @@ function authenticateToken(req, res, next) {
       return res.status(403).send({ message: "Неверный или устаревший токен" });
     }
 
-    req.user = user; // Добавляем данные пользователя в запрос
+    req.user = user;
     next();
   });
 }
 
-// Регистрация пользователя
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -55,7 +54,6 @@ app.post("/register", async (req, res) => {
   }
 
   try {
-    // Проверка, существует ли уже пользователь с таким email
     const checkQuery = "SELECT * FROM Users WHERE email = ?";
     db.query(checkQuery, [email], async (err, results) => {
       if (err) {
@@ -87,7 +85,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// Вход пользователя
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -140,9 +137,8 @@ app.post("/login", (req, res) => {
   });
 });
 
-// Получение клиентов, фильтруя по user_id
 app.get("/clients", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
+  const userId = req.user.userId;
 
   const query = `SELECT * FROM Clients WHERE user_id = ?`;
 
@@ -155,10 +151,9 @@ app.get("/clients", authenticateToken, (req, res) => {
   });
 });
 
-// Добавление нового клиента с user_id
 app.post("/clients", authenticateToken, (req, res) => {
   const { name, email, phone, address, type, company_name } = req.body;
-  const userId = req.user.userId; // Получаем userId из токена
+  const userId = req.user.userId;
 
   if (!name || !type) {
     return res.status(400).send({ message: "Имя и тип клиента обязательны." });
@@ -195,7 +190,6 @@ app.post("/clients", authenticateToken, (req, res) => {
   );
 });
 
-// Обновление клиента с проверкой на user_id
 app.put("/clients/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const { name, email, phone, address, type, company_name } = req.body;
@@ -204,7 +198,7 @@ app.put("/clients/:id", authenticateToken, (req, res) => {
   const query = `UPDATE Clients SET name = ?, email = ?, phone = ?, address = ?, type = ?, company_name = ?, updated_at = NOW() WHERE id = ? AND user_id = ?`;
   db.query(
     query,
-    [name, email, phone, address, type, company_name, id, userId], // Ensure userId is correct
+    [name, email, phone, address, type, company_name, id, userId],
     (err, result) => {
       if (err) {
         console.error("Ошибка обновления клиента:", err);
@@ -221,7 +215,6 @@ app.put("/clients/:id", authenticateToken, (req, res) => {
   );
 });
 
-// Удаление клиента
 app.delete("/clients/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const userId = req.user.userId;
@@ -273,8 +266,8 @@ app.get("/accounts", authenticateToken, (req, res) => {
 });
 
 app.put("/accounts/pay/:id", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Идентификатор текущего пользователя
-  const accountId = req.params.id; // Идентификатор счета
+  const userId = req.user.userId; 
+  const accountId = req.params.id;
 
   const checkQuery = `
       SELECT status FROM Accounts 
@@ -320,33 +313,28 @@ app.put("/accounts/pay/:id", authenticateToken, (req, res) => {
   });
 });
 
-// Добавление нового счета
 app.post("/accounts", authenticateToken, (req, res) => {
   const { client_id, amount, status, description, category_id } = req.body;
   const userId = req.user.userId;
 
-  // Validate client_id
   if (!client_id || isNaN(client_id) || client_id <= 0) {
     return res.status(400).send({
       message: "Неверный client_id. Он должен быть положительным числом.",
     });
   }
 
-  // Validate amount
   if (isNaN(amount) || amount < 0) {
     return res
       .status(400)
       .send({ message: "Сумма должна быть числом и больше или равна нулю." });
   }
 
-  // Validate status
   if (!["paid", "unpaid"].includes(status)) {
     return res
       .status(400)
       .send({ message: "Неверный статус. Допустимые значения: paid, unpaid." });
   }
 
-  // Validate category_id
   if (!category_id) {
     return res
       .status(400)
@@ -387,7 +375,6 @@ app.post("/accounts", authenticateToken, (req, res) => {
   );
 });
 
-// Удаление счета
 app.delete("/accounts/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const userId = req.user.userId;
@@ -408,12 +395,10 @@ app.delete("/accounts/:id", authenticateToken, (req, res) => {
   });
 });
 
-// Обновление записи в таблице accounts
 app.put("/accounts/:id", async (req, res) => {
   const { id } = req.params;
   const { client_id, amount, status, description, category_id } = req.body;
 
-  // Валидация данных
   if (!amount || !status || !category_id) {
     return res
       .status(400)
@@ -434,7 +419,7 @@ app.put("/accounts/:id", async (req, res) => {
 
     const values = [client_id, amount, status, description, category_id, id];
 
-    const result = await db.execute(query, values); // No destructuring needed
+    const result = await db.execute(query, values); 
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Запись не найдена." });
@@ -514,7 +499,7 @@ app.delete("/categories/:id", authenticateToken, (req, res) => {
 });
 
 app.get("/users", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
+  const userId = req.user.userId; 
 
   const query = `SELECT * FROM users WHERE id = ?`;
 
@@ -527,12 +512,10 @@ app.get("/users", authenticateToken, (req, res) => {
   });
 });
 
-// Маршрут для обновления баланса пользователя
 app.put("/users", authenticateToken, (req, res) => {
   const { amount } = req.body;
-  const userId = req.user.id; // Получаем ID пользователя из JWT
+  const userId = req.user.id; 
 
-  // Обновляем баланс пользователя
   const query = "UPDATE users SET amount = ? WHERE id = ?";
   db.query(query, [amount, userId], (err, result) => {
     if (err) {
@@ -544,7 +527,7 @@ app.put("/users", authenticateToken, (req, res) => {
 });
 
 app.post("/tasks", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
+  const userId = req.user.userId;
   const { title, description, status, start_date, due_date } = req.body;
 
   const query = `INSERT INTO tasks (user_id, title, description, status, start_date, due_date, created_at, updated_at) 
@@ -584,7 +567,6 @@ app.put("/tasks/:id", authenticateToken, (req, res) => {
   const { title, description, status, start_date, due_date } = req.body;
   const userId = req.user.userId;
 
-  // Валидация данных
   if (!title || title.trim() === "") {
     return res
       .status(400)
@@ -616,7 +598,7 @@ app.put("/tasks/:id", authenticateToken, (req, res) => {
 });
 
 app.delete("/tasks/:id", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
+  const userId = req.user.userId;
   const taskId = req.params.id;
 
   const query = `DELETE FROM tasks WHERE id = ? AND user_id = ?`;
@@ -634,7 +616,7 @@ app.delete("/tasks/:id", authenticateToken, (req, res) => {
 });
 
 app.post("/cards", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
+  const userId = req.user.userId; 
   const { card_number, card_holder_name, expiration_date, cvv } = req.body;
 
   const query = `INSERT INTO cards (user_id, card_number, card_holder_name, expiration_date, cvv) 
@@ -654,7 +636,7 @@ app.post("/cards", authenticateToken, (req, res) => {
 });
 
 app.get("/cards", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
+  const userId = req.user.userId;
 
   const query = `SELECT * FROM cards WHERE user_id = ?`;
 
@@ -668,8 +650,8 @@ app.get("/cards", authenticateToken, (req, res) => {
 });
 
 app.put("/cards/:id", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
-  const cardId = req.params.id; // Получаем ID карты
+  const userId = req.user.userId; 
+  const cardId = req.params.id; 
   const { card_number, card_holder_name, expiration_date, cvv } = req.body;
 
   const query = `UPDATE cards 
@@ -694,8 +676,8 @@ app.put("/cards/:id", authenticateToken, (req, res) => {
 });
 
 app.delete("/cards/:id", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // Получаем userId из токена
-  const cardId = req.params.id; // Получаем ID карты
+  const userId = req.user.userId; 
+  const cardId = req.params.id;
 
   const query = `DELETE FROM cards WHERE id = ? AND user_id = ?`;
 
@@ -710,6 +692,20 @@ app.delete("/cards/:id", authenticateToken, (req, res) => {
     res.send({ message: "Карта успешно удалена." });
   });
 });
+
+app.get("/reports", authenticateToken, (req, res) => {
+    const userId = req.user.userId; 
+  
+    const query = `SELECT * FROM reports WHERE user_id = ?`;
+  
+    db.query(query, [userId], (err, results) => {
+      if (err) {
+        console.error("Ошибка получения карт:", err);
+        return res.status(500).send({ message: "Ошибка сервера." });
+      }
+      res.send(results);
+    });
+  });
 
 app.listen(port, () => {
   console.log(`Сервер запущен на порту ${port}`);
