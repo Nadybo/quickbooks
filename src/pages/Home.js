@@ -11,7 +11,7 @@ import {
   Dropdown,
   Form,
 } from "react-bootstrap";
-import { Line } from "react-chartjs-2";
+import { Line, Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -68,6 +68,7 @@ function Home() {
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = () => setShowModal(true);
   const [onAddCard] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
   const [tasks, setTasks] = useState({
     notStarted: [],
@@ -86,6 +87,28 @@ function Home() {
     card_holder_name: "",
     expiration_date: "",
     cvv: "",
+  });
+  const [pieChartData, setPieChartData] = useState({
+    labels: ["Категория 1", "Категория 2", "Категория 3", "Категория 4"],
+    datasets: [
+      {
+        label: "Количество транзакций",
+        data: [0, 0, 0, 0],
+        backgroundColor: [
+          "rgba(255, 99, 132, 0.6)",
+          "rgba(54, 162, 235, 0.6)",
+          "rgba(255, 206, 86, 0.6)",
+          "rgba(75, 192, 192, 0.6)",
+        ],
+        borderColor: [
+          "rgba(255, 99, 132, 1)",
+          "rgba(54, 162, 235, 1)",
+          "rgba(255, 206, 86, 1)",
+          "rgba(75, 192, 192, 1)",
+        ],
+        borderWidth: 1,
+      },
+    ],
   });
 
   const handleAddTask = () => {
@@ -131,39 +154,54 @@ function Home() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setClients(clientsResponse.data);
-
-        // Загружаем счета
+  
         const accountsResponse = await axios.get(
           "http://localhost:5000/accounts",
           { headers: { Authorization: `Bearer ${token}` } }
         );
+  
+        const categoriesResponse = await axios.get(
+          "http://localhost:5000/categories",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+  
+        // Преобразование категорий в объект { category_id: category_name }
+        const categoryMap = categoriesResponse.data.reduce((acc, category) => {
+          acc[category.id] = category.name;
+          return acc;
+        }, {});
+  
+        setCategories(categoryMap);
+  
         const cardsResponse = await axios.get("http://localhost:5000/cards", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+  
         if (
           Array.isArray(cardsResponse.data) &&
           cardsResponse.data.length > 0
         ) {
           setCards(cardsResponse.data);
         }
-
+  
         const income = accountsResponse.data.filter(
-          (account) => account.status === "paid" && account.category_id === 2
+          (account) =>
+            account.status === "paid" &&
+            (account.category_id === 2 || account.category_id === 4)
         );
         const expenses = accountsResponse.data.filter(
           (account) =>
             account.status === "paid" &&
-            (account.category_id === 1 || account.category_id === 4)
+            (account.category_id === 1 || account.category_id === 3)
         );
-
+  
         setIncomeData(income);
         setExpenseData(expenses);
       } catch (error) {
         console.error("Ошибка при загрузке данных", error);
       }
     };
-
+  
     fetchData();
   }, [token]);
 
@@ -275,35 +313,86 @@ function Home() {
     }
   };
 
-  const incomeChartData = {
+  const multiAxisChartData = {
     labels: incomeData.map((account) =>
       new Date(account.created_at).toLocaleDateString()
     ),
     datasets: [
       {
         label: "Доходы",
-        data: incomeData.map((account) => account.amount),
+        data: incomeData.map((account) => parseFloat(account.amount)),
         borderColor: "green",
         backgroundColor: "rgba(0, 255, 0, 0.2)",
         fill: true,
+        yAxisID: "y1", // Используем первую ось Y для доходов
+      },
+      {
+        label: "Расходы",
+        data: expenseData.map((account) => parseFloat(account.amount)),
+        borderColor: "red",
+        backgroundColor: "rgba(255, 0, 0, 0.2)",
+        fill: true,
+        yAxisID: "y2", // Используем вторую ось Y для расходов
       },
     ],
   };
 
-  const expenseChartData = {
-    labels: expenseData.map((account) =>
-      new Date(account.created_at).toLocaleDateString()
-    ),
-    datasets: [
-      {
-        label: "Расходы",
-        data: expenseData.map((account) => account.amount),
-        borderColor: "red",
-        backgroundColor: "rgba(255, 0, 0, 0.2)",
-        fill: true,
+  const multiAxisChartOptions = {
+    responsive: true,
+    scales: {
+      y1: {
+        type: "linear",
+        position: "left", // Ось Y для доходов будет слева
+        ticks: {
+          beginAtZero: true,
+        },
       },
-    ],
+      y2: {
+        type: "linear",
+        position: "right", // Ось Y для расходов будет справа
+        ticks: {
+          beginAtZero: true,
+        },
+      },
+    },
   };
+
+  useEffect(() => {
+    if (incomeData.length > 0 || expenseData.length > 0 && categories) {
+      const allData = [...incomeData, ...expenseData];
+  
+      // Подсчет количества транзакций по каждой категории
+      const categoryCounts = Object.keys(categories).map((categoryId) =>
+        allData.filter(
+          (transaction) => transaction.category_id === parseInt(categoryId)
+        ).length
+      );
+  
+      // Обновление данных для графика
+      setPieChartData({
+        labels: Object.values(categories), // Используем названия категорий
+        datasets: [
+          {
+            label: "Количество транзакций",
+            data: categoryCounts,
+            backgroundColor: [
+              "rgba(255, 99, 132, 0.6)",
+              "rgba(54, 162, 235, 0.6)",
+              "rgba(255, 206, 86, 0.6)",
+              "rgba(75, 192, 192, 0.6)",
+            ],
+            borderColor: [
+              "rgba(255, 99, 132, 1)",
+              "rgba(54, 162, 235, 1)",
+              "rgba(255, 206, 86, 1)",
+              "rgba(75, 192, 192, 1)",
+            ],
+            borderWidth: 1,
+          },
+        ],
+      });
+    }
+  }, [incomeData, expenseData, categories]);
 
   const handleCopyText = (text) => {
     // Создаем временный элемент input для копирования текста в буфер обмена
@@ -322,8 +411,8 @@ function Home() {
       id="uncontrolled-tab-example"
       className="mb-3"
     >
-      <ToastContainer />
       <Tab eventKey="home" title="Home">
+      <ToastContainer />
         <ScrollableContainer>
           <Row style={{ display: "flex", alignItems: "stretch" }}>
             {cards.length > 0 ? (
@@ -386,19 +475,32 @@ function Home() {
             </Col>
           </Row>
           <Row className="mt-4">
-            <Col md={6}>
+            <Col md={8}>
               <Card>
                 <Card.Body>
                   <Card.Title>{t("dashboard.income")}</Card.Title>
-                  <Line data={incomeChartData} />
+                  <GraphWrapper>
+                    <Line
+                      data={multiAxisChartData}
+                      options={multiAxisChartOptions}
+                    />
+                  </GraphWrapper>
                 </Card.Body>
               </Card>
             </Col>
-            <Col md={6}>
+            <Col md={4}>
               <Card>
                 <Card.Body>
                   <Card.Title>{t("dashboard.expenses")}</Card.Title>
-                  <Line data={expenseChartData} />
+                  <GraphWrapper>
+                    <Pie
+                      data={pieChartData}
+                      options={{
+                        responsive: true,
+                        plugins: { legend: { position: "top" } },
+                      }}
+                    />
+                  </GraphWrapper>
                 </Card.Body>
               </Card>
             </Col>
@@ -560,7 +662,7 @@ function Home() {
                     <p>{task.description}</p>
                     <Dropdown>
                       <Dropdown.Toggle
-                        variant="outline-success"
+                        variant="primary"
                         size="sm"
                         id="dropdown-menu-end"
                       >
@@ -612,8 +714,8 @@ function Home() {
                     <p>{task.description}</p>
                     <Dropdown>
                       <Dropdown.Toggle
-                        variant="outline-success"
-                        size="sm"
+                        variant="primary"
+                        size="sm "
                         id="dropdown-menu-end"
                       >
                         Действия
@@ -742,12 +844,12 @@ const TaskDiv = styled.div`
   display: flex;
   flex-direction: column;
   padding: 10px;
-  background-color: rgb(231, 235, 231);
+  background-color: #f5f5f5;
   border-radius: 5px;
   margin-bottom: 5px;
   cursor: pointer;
   &:hover {
-    background-color: rgb(168, 168, 168);
+    background-color: #2ca01c;
     color: white;
   }
 `;
@@ -761,9 +863,10 @@ const ScrollableContainer = styled.div`
 
 const CardDiv = styled.div`
   padding: 5px;
-  background-color: rgb(231, 235, 231);
+  background-color: #f5f5f5;
   border-radius: 5px;
   margin-bottom: 5px;
+  height: auto;
   cursor: pointer;
   &:hover {
     background-color: #2ca01c;
@@ -813,4 +916,8 @@ const ClientList = styled.div`
 const AccountList = styled.div`
   max-height: 200px;
   overflow-y: auto;
+`;
+
+const GraphWrapper = styled.div`
+  height: 500px;
 `;

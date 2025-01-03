@@ -258,7 +258,6 @@ const AccountsTable = ({ accounts, onSort, sortType, sortOrder }) => (
           {sortType === "amount" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
-        <th>Статус</th>
         <th>Описание</th>
         <th
           onClick={() => onSort("category_name")}
@@ -280,7 +279,6 @@ const AccountsTable = ({ accounts, onSort, sortType, sortOrder }) => (
         <tr key={account.account_id}>
           <td>{account.client_name}</td>
           <td>{account.amount} ₽</td>
-          <td>{statusMapping[account.status] || account.status}</td>
           <td>{account.description}</td>
           <td>{account.category_name}</td>
           <td>{new Date(account.created_at).toLocaleDateString()}</td>
@@ -291,7 +289,7 @@ const AccountsTable = ({ accounts, onSort, sortType, sortOrder }) => (
 );
 
 const StyledTableContainer = styled.div`
-  max-height: 680px;
+  max-height: 500px;
   overflow-y: auto;
   border: 1px solid #dee2e6;
   border-radius: 4px;

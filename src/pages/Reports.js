@@ -3,13 +3,13 @@ import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
 import styled from "styled-components";
 import { FaSortAlphaDown, FaSortAlphaUp } from "react-icons/fa";
-import { Card, Col, Row, Button, Form } from "react-bootstrap";
+import { Card, Col, Row, Button, Form, Dropdown } from "react-bootstrap";
 // import { useTranslation } from "react-i18next";
 import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { Doughnut } from "react-chartjs-2";
+import { Doughnut, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -76,12 +76,14 @@ function Reports() {
       );
 
       const income = accountsResponse.data.filter(
-        (account) => account.status === "paid" && account.category_id === 2
+        (account) =>
+          account.status === "paid" &&
+          (account.category_id === 2 || account.category_id === 4)
       );
       const expenses = accountsResponse.data.filter(
         (account) =>
           account.status === "paid" &&
-          (account.category_id === 1 || account.category_id === 4)
+          (account.category_id === 1 || account.category_id === 3)
       );
 
       setIncomeData(income);
@@ -191,11 +193,12 @@ function Reports() {
   );
 
   const totalIncome = incomeData.reduce(
-    (sum, account) => sum + account.amount,
+    (sum, account) => sum + parseFloat(account.amount),
     0
   );
+
   const totalExpense = expenseData.reduce(
-    (sum, account) => sum + account.amount,
+    (sum, account) => sum + parseFloat(account.amount),
     0
   );
 
@@ -230,26 +233,49 @@ function Reports() {
     }
   };
 
-  // const exportChartToPDF = async (chartId) => {
-  //   const chartElement = document.getElementById(chartId);
+  const multiAxisChartData = {
+    labels: incomeData.map((account) =>
+      new Date(account.created_at).toLocaleDateString()
+    ),
+    datasets: [
+      {
+        label: "Доходы",
+        data: incomeData.map((account) => parseFloat(account.amount)),
+        borderColor: "green",
+        backgroundColor: "rgba(0, 255, 0, 0.2)",
+        fill: true,
+        yAxisID: "y1", // Используем первую ось Y для доходов
+      },
+      {
+        label: "Расходы",
+        data: expenseData.map((account) => parseFloat(account.amount)),
+        borderColor: "red",
+        backgroundColor: "rgba(255, 0, 0, 0.2)",
+        fill: true,
+        yAxisID: "y2", // Используем вторую ось Y для расходов
+      },
+    ],
+  };
 
-  //   if (!chartElement) {
-  //     toast.error("График не найден!");
-  //     return;
-  //   }
-
-  //   try {
-  //     const canvas = await html2canvas(chartElement);
-  //     const image = canvas.toDataURL("image/png");
-
-  //     const doc = new jsPDF();
-  //     doc.addImage(image, "PNG", 10, 10, 190, 90); // Настройте размеры
-  //     doc.save(`${chartId}.pdf`);
-  //   } catch (error) {
-  //     toast.error("Ошибка при экспорте в PDF: " + error.message);
-  //   }
-  // };
-
+  const multiAxisChartOptions = {
+    responsive: true,
+    scales: {
+      y1: {
+        type: "linear",
+        position: "left", // Ось Y для доходов будет слева
+        ticks: {
+          beginAtZero: true,
+        },
+      },
+      y2: {
+        type: "linear",
+        position: "right", // Ось Y для расходов будет справа
+        ticks: {
+          beginAtZero: true,
+        },
+      },
+    },
+  };
   return (
     <MainDiv>
       <Row>
@@ -284,97 +310,213 @@ function Reports() {
             <Card.Body>
               <h5>Выберите типы отчетов для экспорта:</h5>
               <Form>
-                <Form.Check
-                  type="checkbox"
-                  id="clients"
-                  name="clients"
-                  label="Клиенты"
-                  checked={selectedData.clients}
-                  onChange={handleCheckboxChange}
-                />
-                <Form.Check
-                  type="checkbox"
-                  id="paidBills"
-                  name="paidBills"
-                  label="Оплаченные счета"
-                  checked={selectedData.paidBills}
-                  onChange={handleCheckboxChange}
-                />
-                <Form.Check
-                  type="checkbox"
-                  id="unpaidBills"
-                  name="unpaidBills"
-                  label="Неоплаченные счета"
-                  checked={selectedData.unpaidBills}
-                  onChange={handleCheckboxChange}
-                />
-                <Form.Check
-                  type="checkbox"
-                  id="incomeExpenses"
-                  name="incomeExpenses"
-                  label="Доходы и расходы"
-                  checked={selectedData.incomeExpenses}
-                  onChange={handleCheckboxChange}
-                />
+                <CheckboxContainer>
+
+                  <CardWrapper
+                    className={selectedData.paidBills ? "selected" : ""}
+                    onClick={() =>
+                      handleCheckboxChange({
+                        target: {
+                          name: "paidBills",
+                          checked: !selectedData.paidBills,
+                        },
+                      })
+                    }
+                  >
+                    <CheckboxInput
+                      type="checkbox"
+                      id="paidBills"
+                      name="paidBills"
+                      checked={selectedData.paidBills}
+                      onChange={handleCheckboxChange}
+                    />
+                    <CheckboxLabel htmlFor="paidBills">
+                      Оплаченные счета
+                    </CheckboxLabel>
+                  </CardWrapper>
+                  <CardWrapper
+                    className={
+                      selectedData.individualUserReports ? "selected" : ""
+                    }
+                    onClick={() =>
+                      handleCheckboxChange({
+                        target: {
+                          name: "individualUserReports",
+                          checked: !selectedData.individualUserReports,
+                        },
+                      })
+                    }
+                  >
+                    <CheckboxInput
+                      type="checkbox"
+                      id="individualUserReports"
+                      name="individualUserReports"
+                      checked={selectedData.individualUserReports}
+                      onChange={handleCheckboxChange}
+                    />
+                    <CheckboxLabel htmlFor="individualUserReports">
+                      Индивидуальные отчеты пользователя
+                    </CheckboxLabel>
+                  </CardWrapper>
+                </CheckboxContainer>
+
+                <CheckboxContainer>
+                  <CardWrapper
+                    className={selectedData.unpaidBills ? "selected" : ""}
+                    onClick={() =>
+                      handleCheckboxChange({
+                        target: {
+                          name: "unpaidBills",
+                          checked: !selectedData.unpaidBills,
+                        },
+                      })
+                    }
+                  >
+                    <CheckboxInput
+                      type="checkbox"
+                      id="unpaidBills"
+                      name="unpaidBills"
+                      checked={selectedData.unpaidBills}
+                      onChange={handleCheckboxChange}
+                    />
+                    <CheckboxLabel htmlFor="unpaidBills">
+                      Неоплаченные счета
+                    </CheckboxLabel>
+                  </CardWrapper>
+
+                  <CardWrapper
+                    className={selectedData.incomeExpenses ? "selected" : ""}
+                    onClick={() =>
+                      handleCheckboxChange({
+                        target: {
+                          name: "incomeExpenses",
+                          checked: !selectedData.incomeExpenses,
+                        },
+                      })
+                    }
+                  >
+                    <CheckboxInput
+                      type="checkbox"
+                      id="incomeExpenses"
+                      name="incomeExpenses"
+                      checked={selectedData.incomeExpenses}
+                      onChange={handleCheckboxChange}
+                    />
+                    <CheckboxLabel htmlFor="incomeExpenses">
+                      Доходы и расходы
+                    </CheckboxLabel>
+                  </CardWrapper>
+                </CheckboxContainer>
+
                 {/* Новые отчеты */}
-                <Form.Check
-                  type="checkbox"
-                  id="clientsReport"
-                  name="clientsReport"
-                  label="Отчет по клиентам"
-                  checked={selectedData.clientsReport}
-                  onChange={handleCheckboxChange}
-                />
-                <Form.Check
-                  type="checkbox"
-                  id="transactionsReport"
-                  name="transactionsReport"
-                  label="Отчет по транзакциям"
-                  checked={selectedData.transactionsReport}
-                  onChange={handleCheckboxChange}
-                />
-                <Form.Check
-                  type="checkbox"
-                  id="individualUserReports"
-                  name="individualUserReports"
-                  label="Индивидуальные отчеты пользователя"
-                  checked={selectedData.individualUserReports}
-                  onChange={handleCheckboxChange}
-                />
+                <CheckboxContainer>
+                  <CardWrapper
+                    className={selectedData.clientsReport ? "selected" : ""}
+                    onClick={() =>
+                      handleCheckboxChange({
+                        target: {
+                          name: "clientsReport",
+                          checked: !selectedData.clientsReport,
+                        },
+                      })
+                    }
+                  >
+                    <CheckboxInput
+                      type="checkbox"
+                      id="clientsReport"
+                      name="clientsReport"
+                      checked={selectedData.clientsReport}
+                      onChange={handleCheckboxChange}
+                    />
+                    <CheckboxLabel htmlFor="clientsReport">
+                      Отчет по клиентам
+                    </CheckboxLabel>
+                  </CardWrapper>
+
+                  <CardWrapper
+                    className={
+                      selectedData.transactionsReport ? "selected" : ""
+                    }
+                    onClick={() =>
+                      handleCheckboxChange({
+                        target: {
+                          name: "transactionsReport",
+                          checked: !selectedData.transactionsReport,
+                        },
+                      })
+                    }
+                  >
+                    <CheckboxInput
+                      type="checkbox"
+                      id="transactionsReport"
+                      name="transactionsReport"
+                      checked={selectedData.transactionsReport}
+                      onChange={handleCheckboxChange}
+                    />
+                    <CheckboxLabel htmlFor="transactionsReport">
+                      Отчет по транзакциям
+                    </CheckboxLabel>
+                  </CardWrapper>
+                </CheckboxContainer>
               </Form>
 
-              <div id="doughnutChart">
-                <Doughnut
-                  data={doughnutChartData}
-                  options={{ responsive: true }}
-                />
-              </div>
+              <GraphWrapper>
+                <GraphDiv id="doughnutChart">
+                  <Doughnut
+                    data={doughnutChartData}
+                    options={{ responsive: true }}
+                  />
+                </GraphDiv>
+                <GraphDiv id="LineChart">
+                  <Line
+                    data={multiAxisChartData}
+                    options={multiAxisChartOptions}
+                  />
+                </GraphDiv>
+              </GraphWrapper>
 
-              <div className="mt-4">
+              <div className="mt-4 d-flex align-items-center">
                 <Button variant="success" onClick={() => exportData("excel")}>
                   Экспорт в Excel
                 </Button>
                 <Button
-                  variant="info"
+                  variant="success"
                   className="ms-2"
                   onClick={() => exportData("csv")}
                 >
                   Экспорт в CSV
                 </Button>
                 <Button
-                  variant="danger"
+                  variant="success"
                   className="ms-2"
                   onClick={() => exportData("pdf")}
                 >
                   Экспорт в PDF
                 </Button>
                 <Button
-                  variant="primary"
+                  variant="success"
                   className="ms-2"
                   onClick={() => exportChart("doughnutChart")}
                 >
                   Экспорт графика
                 </Button>
+                <Dropdown className="ms-2">
+                  <Dropdown.Toggle
+                    variant="outline-success"
+                    size="sm"
+                    id="dropdown-menu-end"
+                  >
+                    Экспорт графика
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={() => exportChart("doughnutChart")}>
+                      Пончиковая диаграмма
+                    </Dropdown.Item>
+                    <Dropdown.Item onClick={() => exportChart("LineChart")}>
+                      Линейная диаграмма
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
               </div>
             </Card.Body>
           </Card>
@@ -458,4 +600,56 @@ const StyledTable = styled.table`
   tbody tr:nth-child(even) {
     background-color: #ffffff;
   }
+`;
+
+const GraphDiv = styled.div`
+  flex: 1;
+  max-height: 230px;
+  margin: 10px;
+`;
+
+const GraphWrapper = styled.div`
+  display: flex;
+  justify-content: space-between; /* Разделяем графики с отступами */
+  gap: 10px;
+  width: 100%;
+`;
+
+const CheckboxContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+`;
+
+const CardWrapper = styled.div`
+  width: 48%;
+  height: 50px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  transition: box-shadow 0.3s ease; /* Плавный переход для box-shadow */
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.35); /* Эффект при наведении */
+  }
+
+  &.selected {
+    background-color: #2ca01c; /* Цвет фона при выделении */
+    box-shadow: 0px 4px 10px #2ca01c; /* Эффект выделения */
+    color: white;
+  }
+`;
+
+const CheckboxInput = styled.input`
+  display: none; /* Сделаем сам чекбокс невидимым */
+`;
+
+const CheckboxLabel = styled.label`
+  margin-left: 10px;
+  font-size: 14px;
+  cursor: pointer;
 `;

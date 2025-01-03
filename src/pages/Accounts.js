@@ -5,7 +5,7 @@ import {
   FaEdit,
   FaSortAlphaDown,
   FaSortAlphaUp,
-  FaUserPlus,
+  FaPlus,
   FaFilter,
 } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
@@ -248,7 +248,7 @@ function Accounts() {
           className="btn btn-outline-success me-2"
           onClick={() => handleShowModal()}
         >
-          <FaUserPlus />
+          <FaPlus />
         </button>
         <button
           className="btn btn-outline-success me-2"
