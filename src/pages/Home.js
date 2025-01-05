@@ -27,7 +27,6 @@ import axios from "axios";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import {
-  FaHome,
   FaExchangeAlt,
   FaFileInvoiceDollar,
   FaFileExport,
@@ -63,8 +62,8 @@ function Home() {
   const [clients, setClients] = useState([]);
   const [incomeData, setIncomeData] = useState([]);
   const [expenseData, setExpenseData] = useState([]);
-  const handleCloseCardModal = () => steCardModal(false);
-  const handleShowCardModal = () => steCardModal(true);
+  const handleCloseCardModal = () => setCardModal(false);
+  const handleShowCardModal = () => setCardModal(true);
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = () => setShowModal(true);
   const [onAddCard] = useState([]);
@@ -76,7 +75,7 @@ function Home() {
     completed: [],
   });
   const [showModal, setShowModal] = useState(false);
-  const [showCardModal, steCardModal] = useState(false);
+  const [showCardModal, setCardModal] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -128,7 +127,7 @@ function Home() {
 
   const handleSaveEditTask = async () => {
     if (!editTask.title) {
-      toast.error("Название задачи не может быть пустым.");
+      toast.error(t("homeToast.editTaskTitleError"));
       return;
     }
     await handleUpdateTask(editTask.id, editTask);
@@ -154,36 +153,35 @@ function Home() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setClients(clientsResponse.data);
-  
+
         const accountsResponse = await axios.get(
           "http://localhost:5000/accounts",
           { headers: { Authorization: `Bearer ${token}` } }
         );
-  
+
         const categoriesResponse = await axios.get(
           "http://localhost:5000/categories",
           { headers: { Authorization: `Bearer ${token}` } }
         );
-  
-        // Преобразование категорий в объект { category_id: category_name }
+
         const categoryMap = categoriesResponse.data.reduce((acc, category) => {
           acc[category.id] = category.name;
           return acc;
         }, {});
-  
+
         setCategories(categoryMap);
-  
+
         const cardsResponse = await axios.get("http://localhost:5000/cards", {
           headers: { Authorization: `Bearer ${token}` },
         });
-  
+
         if (
           Array.isArray(cardsResponse.data) &&
           cardsResponse.data.length > 0
         ) {
           setCards(cardsResponse.data);
         }
-  
+
         const income = accountsResponse.data.filter(
           (account) =>
             account.status === "paid" &&
@@ -194,21 +192,21 @@ function Home() {
             account.status === "paid" &&
             (account.category_id === 1 || account.category_id === 3)
         );
-  
+
         setIncomeData(income);
         setExpenseData(expenses);
       } catch (error) {
         console.error("Ошибка при загрузке данных", error);
       }
     };
-  
+
     fetchData();
   }, [token]);
 
   const handleAddCard = async () => {
     try {
       if (!newCard.expiration_date) {
-        toast.error("Пожалуйста, укажите срок действия карты.");
+        toast.error(t("homeToast.addCardDateError"));
         return;
       }
 
@@ -227,12 +225,12 @@ function Home() {
           },
         }
       );
-      onAddCard(response.data); // Передаем добавленную карту в родительский компонент
-      handleCloseCardModal(); // Закрываем модальное окно
-      toast.success("Карта успешно добавлено!");
+      onAddCard(response.data);
+      handleCloseCardModal();
+      handleAddCard();
+      toast.success(t("dashboard.addCardSuccess"));
     } catch (error) {
-      console.error("Error adding card:", error);
-      toast.error("Ошибка при добавлении карты.");
+      toast.error(t("dashboard.addCardError"));
     }
   };
 
@@ -242,7 +240,6 @@ function Home() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Распределение задач по статусам
       const notStarted = response.data.filter(
         (task) => task.status === "not_started"
       );
@@ -269,16 +266,15 @@ function Home() {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchTasks();
-      toast.success("Задача добавлена!");
+      toast.success(t("homeToast.addTaskSuccess"));
     } catch (error) {
-      console.error("Ошибка при добавлении задачи:", error);
-      toast.error("Ошибка при добавлении задачи.");
+      toast.error(t("homeToast.addTaskError"));
     }
   };
 
   const handleUpdateTask = async (taskId, updatedTask) => {
     if (!updatedTask.title || updatedTask.title.trim() === "") {
-      toast.error("Название задачи не может быть пустым.");
+      toast.error(t("homeToast.editTaskTitleError"));
       return;
     }
 
@@ -291,12 +287,11 @@ function Home() {
         }
       );
       if (response.status === 200) {
-        toast.success("Задача успешно обновлена!");
-        fetchTasks(); // Перезагрузка списка задач
+        toast.success(t("homeToast.updateTaskSuccess"));
+        fetchTasks();
       }
     } catch (error) {
-      console.error("Ошибка обновления задачи:", error);
-      toast.error("Не удалось обновить задачу.");
+      toast.error(t("homeToast.updateTaskError"));
     }
   };
 
@@ -306,10 +301,9 @@ function Home() {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchTasks();
-      toast.success("Задача удалена!");
+      toast.success(t("homeToast.deleteTaskSuccess"));
     } catch (error) {
-      console.error("Ошибка при удалении задачи:", error);
-      toast.error("Ошибка при удалении задачи.");
+      toast.error(t("homeToast.deleteTaskError"));
     }
   };
 
@@ -319,20 +313,20 @@ function Home() {
     ),
     datasets: [
       {
-        label: "Доходы",
+        label: t("dashboard.income"),
         data: incomeData.map((account) => parseFloat(account.amount)),
         borderColor: "green",
         backgroundColor: "rgba(0, 255, 0, 0.2)",
         fill: true,
-        yAxisID: "y1", // Используем первую ось Y для доходов
+        yAxisID: "y1",
       },
       {
-        label: "Расходы",
+        label: t("dashboard.expenses"),
         data: expenseData.map((account) => parseFloat(account.amount)),
         borderColor: "red",
         backgroundColor: "rgba(255, 0, 0, 0.2)",
         fill: true,
-        yAxisID: "y2", // Используем вторую ось Y для расходов
+        yAxisID: "y2",
       },
     ],
   };
@@ -358,22 +352,21 @@ function Home() {
   };
 
   useEffect(() => {
-    if (incomeData.length > 0 || expenseData.length > 0 && categories) {
+    if (incomeData.length > 0 || (expenseData.length > 0 && categories)) {
       const allData = [...incomeData, ...expenseData];
-  
-      // Подсчет количества транзакций по каждой категории
-      const categoryCounts = Object.keys(categories).map((categoryId) =>
-        allData.filter(
-          (transaction) => transaction.category_id === parseInt(categoryId)
-        ).length
+
+      const categoryCounts = Object.keys(categories).map(
+        (categoryId) =>
+          allData.filter(
+            (transaction) => transaction.category_id === parseInt(categoryId)
+          ).length
       );
-  
-      // Обновление данных для графика
+
       setPieChartData({
-        labels: Object.values(categories), // Используем названия категорий
+        labels: Object.values(categories),
         datasets: [
           {
-            label: "Количество транзакций",
+            label: t("dashboard.NumberTransactions"),
             data: categoryCounts,
             backgroundColor: [
               "rgba(255, 99, 132, 0.6)",
@@ -395,446 +388,485 @@ function Home() {
   }, [incomeData, expenseData, categories]);
 
   const handleCopyText = (text) => {
-    // Создаем временный элемент input для копирования текста в буфер обмена
     const textArea = document.createElement("textarea");
     textArea.value = text;
     document.body.appendChild(textArea);
     textArea.select();
     document.execCommand("copy");
     document.body.removeChild(textArea);
-    toast.success("Текст скопирован!");
+    toast.success(t("homeToast.textCopySuccess"));
   };
+  
 
   return (
-    <Tabs
-      defaultActiveKey="home"
-      id="uncontrolled-tab-example"
-      className="mb-3"
-    >
-      <Tab eventKey="home" title="Home">
+    <div>
       <ToastContainer />
-        <ScrollableContainer>
-          <Row style={{ display: "flex", alignItems: "stretch" }}>
-            {cards.length > 0 ? (
-              cards.map((card, index) => (
+      <Tabs
+        defaultActiveKey="home"
+        id="uncontrolled-tab-example"
+        className="mb-3"
+      >
+        <Tab eventKey="home" title={t("dashboard.titleHome")}>
+          <ScrollableContainer>
+            <Row style={{ display: "flex", alignItems: "stretch" }}>
+              {cards.length > 0 ? (
+                cards.map((card, index) => (
+                  <Col
+                    md={6}
+                    key={index}
+                    style={{ display: "flex", flexDirection: "column" }}
+                  >
+                    <Card style={{ flex: 1 }}>
+                      <Card.Body>
+                        <Card.Title>{t("dashboard.creditCard")}</Card.Title>
+                        <p>
+                          {t("dashboard.balance")}: {card.balance} ₽
+                        </p>
+                        <p>
+                          {t("dashboard.cardNumber")}: {card.card_number}
+                        </p>
+                        <p>
+                          {t("dashboard.name")}:{" "}
+                          {card.card_holder_name || t("dashboard.unknown")}
+                        </p>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))
+              ) : (
                 <Col
                   md={6}
-                  key={index}
                   style={{ display: "flex", flexDirection: "column" }}
                 >
-                  <Card style={{ flex: 1 }}>
-                    <Card.Body>
-                      <Card.Title>{t("dashboard.creditCard")}</Card.Title>
-                      <p>
-                        {t("dashboard.balance")}: {card.balance} ₽
-                      </p>
-                      <p>
-                        {t("dashboard.cardNumber")}: {card.card_number}
-                      </p>
-                      <p>
-                        {t("dashboard.name")}:{" "}
-                        {card.card_holder_name || "Неизвестно"}
-                      </p>
+                  <Card>
+                    <Card.Body
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "150px",
+                      }}
+                    >
+                      <FaPlus
+                        onClick={handleShowCardModal}
+                        style={{
+                          fontSize: "24px",
+                          cursor: "pointer",
+                          marginBottom: "8px",
+                        }}
+                      />
+                      {t("dashboard.addCard")}
                     </Card.Body>
                   </Card>
                 </Col>
-              ))
-            ) : (
-              <Col md={6} style={{ display: "flex", flexDirection: "column" }}>
-                <Button variant="secondary" onClick={handleShowCardModal}>
-                  {t("dashboard.addSecondCard")}
-                </Button>
-              </Col>
-            )}
+              )}
 
-            <Col md={6} style={{ display: "flex", flexDirection: "column" }}>
-              <Card style={{ flex: 1 }}>
-                <Card.Body>
-                  <CustomDiv>
-                    <CustomLink className="nav-link" to="/">
-                      <FaHome />
-                    </CustomLink>
-                    <CustomLink className="nav-link" to="/transactions">
-                      <FaExchangeAlt />
-                    </CustomLink>
-                    <CustomLink className="nav-link" to="/accounts">
-                      <FaFileInvoiceDollar />
-                    </CustomLink>
-                    <CustomLink className="nav-link" to="/reports">
-                      <FaFileExport />
-                    </CustomLink>
-                    <CustomLink className="nav-link" to="/customers">
-                      <FaUser />
-                    </CustomLink>
-                    <CustomLink className="nav-link" to="/customers">
-                      <FaUserPlus />
-                    </CustomLink>
-                  </CustomDiv>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+              <Col md={6} style={{ display: "flex", flexDirection: "column" }}>
+                <Card style={{ flex: 1 }}>
+                  <Card.Body>
+                    <CustomDiv>
+                      <CustomLink className="nav-link" to="/transactions">
+                        <FaExchangeAlt />
+                      </CustomLink>
+                      <CustomLink className="nav-link" to="/accounts">
+                        <FaFileInvoiceDollar />
+                      </CustomLink>
+                      <CustomLink className="nav-link" to="/reports">
+                        <FaFileExport />
+                      </CustomLink>
+                      <CustomLink className="nav-link" to="/customers">
+                        <FaUser />
+                      </CustomLink>
+                      <CustomLink className="nav-link" to="/customers">
+                        <FaUserPlus />
+                      </CustomLink>
+                    </CustomDiv>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+            <Row className="mt-4">
+              <Col md={7}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>{t("dashboard.incomeExpenses")}</Card.Title>
+                    <GraphWrapper>
+                      <Line
+                        data={multiAxisChartData}
+                        options={multiAxisChartOptions}
+                      />
+                    </GraphWrapper>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={5}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>{t("dashboard.category")}</Card.Title>
+                    <GraphWrapper>
+                      <Pie
+                        data={pieChartData}
+                        options={{
+                          responsive: true,
+                          plugins: { legend: { position: "top" } },
+                        }}
+                      />
+                    </GraphWrapper>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+            <Row className="mt-4">
+              <Col md={3}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>{t("dashboard.listCustomers")}</Card.Title>
+                    <ClientList>
+                      {clients.map((client, index) => (
+                        <CardDiv
+                          key={client.id || index}
+                          onClick={() =>
+                            handleCopyText(`${client.name}: ${client.phone}`)
+                          }
+                        >
+                          {client.name} - {client.company_name}
+                        </CardDiv>
+                      ))}
+                    </ClientList>
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col md={3}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>{t("dashboard.listAccounts")}</Card.Title>
+                    <AccountList>
+                      {incomeData.map((account, index) => (
+                        <CardDiv
+                          key={account.id || index}
+                          onClick={() =>
+                            handleCopyText(
+                              `${account.description} - ${account.amount} ₽`
+                            )
+                          }
+                        >
+                          {account.description} - {account.amount} ₽
+                        </CardDiv>
+                      ))}
+                      {expenseData.map((account, index) => (
+                        <CardDiv
+                          key={account.id || index}
+                          onClick={() =>
+                            handleCopyText(
+                              `${account.description} - ${account.amount} ₽`
+                            )
+                          }
+                        >
+                          {account.description} - {account.amount} ₽
+                        </CardDiv>
+                      ))}
+                    </AccountList>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={6}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>{t("dashboard.listTasks")}</Card.Title>
+                    <ClientList>
+                      {tasks.notStarted.map((task, index) => (
+                        <CardDiv key={task.id || index}>
+                          <h3>{task.title}</h3>
+                          <p> {task.description}</p>
+                        </CardDiv>
+                      ))}
+                    </ClientList>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={12}>
+                <Modal show={showCardModal} onHide={handleCloseCardModal}>
+                  <Modal.Header closeButton>
+                    <Modal.Title>{t("addCardModal.title")}</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>
+                    <Form>
+                      <Form.Group controlId="formCardNumber">
+                        <Form.Label>
+                          {t("addCardModal.cardNumberLabel")}
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="card_number"
+                          value={newCard.card_number}
+                          onChange={handleInputChange}
+                          maxLength={16}
+                          required
+                        />
+                      </Form.Group>
+
+                      <Form.Group controlId="formCardHolderName">
+                        <Form.Label>
+                          {t("addCardModal.cardHolderNameLabel")}
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="card_holder_name"
+                          value={newCard.card_holder_name}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </Form.Group>
+
+                      <Form.Group controlId="formExpirationDate">
+                        <Form.Label>
+                          {t("addCardModal.expirationDateLabel")}
+                        </Form.Label>
+                        <Form.Control
+                          type="month"
+                          name="expiration_date"
+                          value={newCard.expiration_date}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </Form.Group>
+
+                      <Form.Group controlId="formCVV">
+                        <Form.Label>{t("addCardModal.cvvLabel")}</Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="cvv"
+                          value={newCard.cvv}
+                          onChange={handleInputChange}
+                          maxLength={3}
+                          required
+                        />
+                      </Form.Group>
+                    </Form>
+                  </Modal.Body>
+                  <Modal.Footer>
+                    <Button variant="secondary" onClick={handleCloseCardModal}>
+                      {t("addCardModal.cancelButton")}
+                    </Button>
+                    <Button variant="primary" onClick={handleAddCard}>
+                      {t("addCardModal.addButtonText")}
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
+              </Col>
+            </Row>
+          </ScrollableContainer>
+        </Tab>
+
+        <Tab eventKey="planner" title={t("dashboard.titlePlanner")}>
           <Row className="mt-4">
-            <Col md={8}>
-              <Card>
-                <Card.Body>
-                  <Card.Title>{t("dashboard.income")}</Card.Title>
-                  <GraphWrapper>
-                    <Line
-                      data={multiAxisChartData}
-                      options={multiAxisChartOptions}
-                    />
-                  </GraphWrapper>
-                </Card.Body>
-              </Card>
-            </Col>
             <Col md={4}>
               <Card>
                 <Card.Body>
-                  <Card.Title>{t("dashboard.expenses")}</Card.Title>
-                  <GraphWrapper>
-                    <Pie
-                      data={pieChartData}
-                      options={{
-                        responsive: true,
-                        plugins: { legend: { position: "top" } },
-                      }}
-                    />
-                  </GraphWrapper>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-          <Row className="mt-4">
-            <Col md={3}>
-              <Card>
-                <Card.Body>
-                  <Card.Title>Список клиентов</Card.Title>
-                  <ClientList>
-                    {clients.map((client, index) => (
-                      <CardDiv
-                        key={client.id || index}
-                        onClick={() =>
-                          handleCopyText(`${client.name}: ${client.phone}`)
-                        }
-                      >
-                        {client.name} - {client.company_name}
-                      </CardDiv>
-                    ))}
-                  </ClientList>
+                  <Card.Title>{t("taskBoard.notStartedTitle")}</Card.Title>
+                  {tasks.notStarted.map((task, index) => (
+                    <TaskDiv
+                      key={task.id || index}
+                      onClick={() =>
+                        handleUpdateTask(task.id, { status: "in_progress" })
+                      }
+                    >
+                      <h3>{task.title}</h3>
+                      <p>{task.description}</p>
+                      <Dropdown>
+                        <Dropdown.Toggle
+                          variant="primary"
+                          size="sm"
+                          id="dropdown-menu-end"
+                        >
+                          {t("taskBoard.actionsDropdown")}
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => deleteTask(task.id)}>
+                            <FaTrash />
+                            {t("taskBoard.deleteTask")}
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => handleShowEditModal(task)}
+                          >
+                            <FaEdit />
+                            {t("taskBoard.editTask")}
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </TaskDiv>
+                  ))}
+
+                  <TaskDiv
+                    onClick={handleShowModal}
+                    style={{
+                      cursor: "pointer",
+                      border: "1px dashed #ccc",
+                      padding: "10px",
+                    }}
+                  >
+                    <FaPlus size={20} />
+                  </TaskDiv>
                 </Card.Body>
               </Card>
             </Col>
 
-            <Col md={3}>
+            <Col md={4}>
               <Card>
                 <Card.Body>
-                  <Card.Title>Список счетов</Card.Title>
-                  <AccountList>
-                    {incomeData.map((account, index) => (
-                      <CardDiv
-                        key={account.id || index}
-                        onClick={() =>
-                          handleCopyText(
-                            `${account.description} - ${account.amount} ₽`
-                          )
-                        }
-                      >
-                        {account.description} - {account.amount} ₽
-                      </CardDiv>
-                    ))}
-                    {expenseData.map((account, index) => (
-                      <CardDiv
-                        key={account.id || index}
-                        onClick={() =>
-                          handleCopyText(
-                            `${account.description} - ${account.amount} ₽`
-                          )
-                        }
-                      >
-                        {account.description} - {account.amount} ₽
-                      </CardDiv>
-                    ))}
-                  </AccountList>
+                  <Card.Title>{t("taskBoard.inProgressTitle")}</Card.Title>
+                  {tasks.inProgress.map((task, index) => (
+                    <TaskDiv
+                      key={task.id || index}
+                      onClick={() =>
+                        handleUpdateTask(task.id, { status: "completed" })
+                      }
+                    >
+                      <h3>{task.title}</h3>
+                      <p>{task.description}</p>
+                      <Dropdown>
+                        <Dropdown.Toggle
+                          variant="primary"
+                          size="sm"
+                          id="dropdown-menu-end"
+                        >
+                          {t("taskBoard.actionsDropdown")}
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => deleteTask(task.id)}>
+                            <FaTrash />
+                            {t("taskBoard.deleteTask")}
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => handleShowEditModal(task)}
+                          >
+                            <FaEdit />
+                            {t("taskBoard.editTask")}
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </TaskDiv>
+                  ))}
                 </Card.Body>
               </Card>
             </Col>
-            <Col md={6}>
+
+            <Col md={4}>
               <Card>
                 <Card.Body>
-                  <Card.Title>Задачи</Card.Title>
-                  <ClientList>
-                    {tasks.notStarted.map((task, index) => (
-                      <CardDiv key={task.id || index}>
-                        <h3>{task.title}</h3>
-                        <p> {task.description}</p>
-                      </CardDiv>
-                    ))}
-                  </ClientList>
+                  <Card.Title>{t("taskBoard.completedTitle")}</Card.Title>
+                  {tasks.completed.map((task, index) => (
+                    <TaskDiv
+                      key={task.id || index}
+                      onClick={() => deleteTask(task.id)}
+                    >
+                      <h3>{task.title}</h3>
+                      <p>{task.description}</p>
+                    </TaskDiv>
+                  ))}
                 </Card.Body>
               </Card>
             </Col>
           </Row>
           <Row>
             <Col md={12}>
-              <Modal show={showCardModal} onHide={handleCloseCardModal}>
+              <Modal show={showModal} onHide={handleCloseModal}>
                 <Modal.Header closeButton>
-                  <Modal.Title>Добавить карту</Modal.Title>
+                  <Modal.Title>
+                    {editTask
+                      ? t("taskBoard.modalTitleEditTask")
+                      : t("taskBoard.modalTitleAddTask")}
+                  </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                  <Form>
-                    <Form.Group controlId="formCardNumber">
-                      <Form.Label>Номер карты</Form.Label>
-                      <Form.Control
+                  <form>
+                    <div className="form-group">
+                      <label>{t("taskBoard.form.titleLabel")}</label>
+                      <input
                         type="text"
-                        name="card_number"
-                        value={newCard.card_number}
-                        onChange={handleInputChange}
-                        maxLength={16}
-                        required
+                        className="form-control"
+                        value={editTask ? editTask.title : newTask.title}
+                        onChange={(e) =>
+                          editTask
+                            ? setEditTask({
+                                ...editTask,
+                                title: e.target.value,
+                              })
+                            : setNewTask({ ...newTask, title: e.target.value })
+                        }
                       />
-                    </Form.Group>
-
-                    <Form.Group controlId="formCardHolderName">
-                      <Form.Label>Имя владельца карты</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="card_holder_name"
-                        value={newCard.card_holder_name}
-                        onChange={handleInputChange}
-                        required
+                    </div>
+                    <div className="form-group mt-3">
+                      <label>{t("taskBoard.form.descriptionLabel")}</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={
+                          editTask ? editTask.description : newTask.description
+                        }
+                        onChange={(e) =>
+                          editTask
+                            ? setEditTask({
+                                ...editTask,
+                                description: e.target.value,
+                              })
+                            : setNewTask({
+                                ...newTask,
+                                description: e.target.value,
+                              })
+                        }
                       />
-                    </Form.Group>
-
-                    <Form.Group controlId="formExpirationDate">
-                      <Form.Label>Срок действия</Form.Label>
-                      <Form.Control
-                        type="date"
-                        name="expiration_date"
-                        value={newCard.expiration_date}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </Form.Group>
-
-                    <Form.Group controlId="formCVV">
-                      <Form.Label>CVV</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="cvv"
-                        value={newCard.cvv}
-                        onChange={handleInputChange}
-                        maxLength={3}
-                        required
-                      />
-                    </Form.Group>
-                  </Form>
+                    </div>
+                    <div className="form-group mt-3">
+                      <label>{t("taskBoard.form.statusLabel")}</label>
+                      <select
+                        className="form-control"
+                        value={editTask ? editTask.status : newTask.status}
+                        onChange={(e) =>
+                          editTask
+                            ? setEditTask({
+                                ...editTask,
+                                status: e.target.value,
+                              })
+                            : setNewTask({ ...newTask, status: e.target.value })
+                        }
+                      >
+                        <option value="not_started">
+                          {t("taskBoard.form.statusOptions.notStarted")}
+                        </option>
+                        <option value="in_progress">
+                          {t("taskBoard.form.statusOptions.inProgress")}
+                        </option>
+                        <option value="completed">
+                          {t("taskBoard.form.statusOptions.completed")}
+                        </option>
+                      </select>
+                    </div>
+                  </form>
                 </Modal.Body>
                 <Modal.Footer>
-                  <Button variant="secondary" onClick={handleCloseCardModal}>
-                    Отмена
+                  <Button variant="secondary" onClick={handleCloseModal}>
+                    {t("taskBoard.cancelButtonText")}
                   </Button>
-                  <Button variant="primary" onClick={handleAddCard}>
-                    Добавить карту
+                  <Button
+                    variant="success"
+                    onClick={editTask ? handleSaveEditTask : handleAddTask}
+                  >
+                    {editTask
+                      ? t("taskBoard.saveChangesButtonText")
+                      : t("taskBoard.addButtonText")}
                   </Button>
                 </Modal.Footer>
               </Modal>
             </Col>
           </Row>
-        </ScrollableContainer>
-      </Tab>
-
-      <Tab eventKey="profile" title="Planner">
-        <Row className="mt-4">
-          {/* Колонка для задач "Не начато" */}
-          <Col md={4}>
-            <Card>
-              <Card.Body>
-                <Card.Title>Не начато</Card.Title>
-                {tasks.notStarted.map((task, index) => (
-                  <TaskDiv
-                    key={task.id || index}
-                    onClick={() =>
-                      handleUpdateTask(task.id, { status: "in_progress" })
-                    }
-                  >
-                    <h3>{task.title}</h3>
-                    <p>{task.description}</p>
-                    <Dropdown>
-                      <Dropdown.Toggle
-                        variant="primary"
-                        size="sm"
-                        id="dropdown-menu-end"
-                      >
-                        Действия
-                      </Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => deleteTask(task.id)}>
-                          <FaTrash />
-                          Удалить
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => handleShowEditModal(task)}
-                        >
-                          <FaEdit />
-                          Редактировать
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </TaskDiv>
-                ))}
-
-                {/* Кнопка для добавления задачи */}
-                <TaskDiv
-                  onClick={handleShowModal}
-                  style={{
-                    cursor: "pointer",
-                    border: "1px dashed #ccc",
-                    padding: "10px",
-                  }}
-                >
-                  <FaPlus size={20} />
-                </TaskDiv>
-              </Card.Body>
-            </Card>
-          </Col>
-
-          <Col md={4}>
-            <Card>
-              <Card.Body>
-                <Card.Title>В процессе</Card.Title>
-                {tasks.inProgress.map((task, index) => (
-                  <TaskDiv
-                    key={task.id || index}
-                    onClick={() =>
-                      handleUpdateTask(task.id, { status: "completed" })
-                    }
-                  >
-                    <h3>{task.title}</h3>
-                    <p>{task.description}</p>
-                    <Dropdown>
-                      <Dropdown.Toggle
-                        variant="primary"
-                        size="sm "
-                        id="dropdown-menu-end"
-                      >
-                        Действия
-                      </Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => deleteTask(task.id)}>
-                          <FaTrash />
-                          Удалить
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => handleShowEditModal(task)}
-                        >
-                          <FaEdit />
-                          Редактировать
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </TaskDiv>
-                ))}
-              </Card.Body>
-            </Card>
-          </Col>
-
-          {/* Колонка для задач "Завершенные" */}
-          <Col md={4}>
-            <Card>
-              <Card.Body>
-                <Card.Title>Завершенные</Card.Title>
-                {tasks.completed.map((task, index) => (
-                  <TaskDiv
-                    key={task.id || index}
-                    onClick={() => deleteTask(task.id)}
-                  >
-                    <h3>{task.title}</h3>
-                    <p>{task.description}</p>
-                  </TaskDiv>
-                ))}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-        <Row>
-          <Col md={12}>
-            <Modal show={showModal} onHide={handleCloseModal}>
-              <Modal.Header closeButton>
-                <Modal.Title>
-                  {editTask ? "Изменить задачу" : "Добавить задачу"}
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                <form>
-                  <div className="form-group">
-                    <label>Название</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={editTask ? editTask.title : newTask.title}
-                      onChange={(e) =>
-                        editTask
-                          ? setEditTask({ ...editTask, title: e.target.value })
-                          : setNewTask({ ...newTask, title: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="form-group mt-3">
-                    <label>Описание</label>
-                    <textarea
-                      className="form-control"
-                      rows="3"
-                      value={
-                        editTask ? editTask.description : newTask.description
-                      }
-                      onChange={(e) =>
-                        editTask
-                          ? setEditTask({
-                              ...editTask,
-                              description: e.target.value,
-                            })
-                          : setNewTask({
-                              ...newTask,
-                              description: e.target.value,
-                            })
-                      }
-                    />
-                  </div>
-                  <div className="form-group mt-3">
-                    <label>Статус</label>
-                    <select
-                      className="form-control"
-                      value={editTask ? editTask.status : newTask.status}
-                      onChange={(e) =>
-                        editTask
-                          ? setEditTask({ ...editTask, status: e.target.value })
-                          : setNewTask({ ...newTask, status: e.target.value })
-                      }
-                    >
-                      <option value="not_started">Не начато</option>
-                      <option value="in_progress">В процессе</option>
-                      <option value="completed">Завершено</option>
-                    </select>
-                  </div>
-                </form>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={handleCloseModal}>
-                  Отмена
-                </Button>
-                <Button
-                  variant="success"
-                  onClick={editTask ? handleSaveEditTask : handleAddTask}
-                >
-                  {editTask ? "Сохранить изменения" : "Добавить"}
-                </Button>
-              </Modal.Footer>
-            </Modal>
-          </Col>
-        </Row>
-      </Tab>
-    </Tabs>
+        </Tab>
+      </Tabs>
+    </div>
   );
 }
 

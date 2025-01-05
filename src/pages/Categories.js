@@ -10,9 +10,11 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import { Modal, Button, Form, Dropdown } from "react-bootstrap";
 import "react-toastify/dist/ReactToastify.css";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 
 function Categories() {
+  const {t}=useTranslation();
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -113,12 +115,12 @@ function Categories() {
   return (
     <div>
       <ToastContainer />
-      <h3 className="mb-4">Список категорий</h3>
+      <h3 className="mb-4">{t("categories.listTitle")}</h3>
       <SearchContainer>
         <input
           type="text"
           className="form-control me-3"
-          placeholder="Поиск категорий..."
+          placeholder={t("categories.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -139,9 +141,9 @@ function Categories() {
         <StyledTable className="table table-hover">
           <thead>
             <tr>
-              <th>Название</th>
-              <th>Описание</th>
-              <th>Действия</th>
+              <th>{t("categories.nameColumn")}</th>
+              <th>{t("categories.descriptionColumn")}</th>
+              <th>{t("categories.actionsColumn")}</th>
             </tr>
           </thead>
           <tbody>
@@ -156,18 +158,18 @@ function Categories() {
                       size="sm"
                       id="dropdown-basic"
                     >
-                      Действия
+                      {t("categories.actionsButton")}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
                       <Dropdown.Item
                         onClick={() => deleteCategory(category.id)}
                       >
                         <FaTrash />
-                        Удалить
+                        {t("categories.deleteAction")}
                       </Dropdown.Item>
                       <Dropdown.Item onClick={() => handleShowModal(category)}>
                         <FaEdit />
-                        Редактировать
+                        {t("categories.editAction")}
                       </Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
@@ -181,28 +183,30 @@ function Categories() {
       <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {isEditMode ? "Редактировать категорию" : "Добавить категорию"}
+            {isEditMode
+              ? t("categories.editCategory")
+              : t("categories.addCategory")}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Название</Form.Label>
+              <Form.Label>{t("categories.nameLabel")}</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
-                placeholder="Введите название"
+                placeholder={t("categories.namePlaceholder")}
                 value={categoryData.name}
                 onChange={handleInputChange}
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Описание</Form.Label>
+              <Form.Label>{t("categories.descriptionLabel")}</Form.Label>
               <Form.Control
                 as="textarea"
-                rows={3} // Устанавливает количество строк
+                rows={3}
                 name="description"
-                placeholder="Введите описание"
+                placeholder={t("categories.descriptionPlaceholder")}
                 value={categoryData.description}
                 onChange={handleInputChange}
               />
@@ -211,10 +215,10 @@ function Categories() {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseModal}>
-            Отменить
+            {t("categories.cancelButton")}
           </Button>
           <Button variant="primary" onClick={handleSaveCategory}>
-            Сохранить
+            {t("categories.saveButton")}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -224,7 +228,6 @@ function Categories() {
 
 export default Categories;
 
-// Стили
 const StyledTableContainer = styled.div`
   max-height: 700px;
   min-height: 700px;

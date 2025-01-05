@@ -11,12 +11,12 @@ import {
 import { Card, Col, Row } from "react-bootstrap";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useTranslation } from "react-i18next";
 import * as XLSX from "xlsx";
 import Papa from "papaparse";
 import axios from "axios";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { useTranslation } from "react-i18next";
 
 function Transactions() {
   const { t } = useTranslation();
@@ -52,6 +52,7 @@ function Transactions() {
       }
     });
   };
+  
 
   const filterByStatus = (accounts, status) => {
     if (!status) return accounts; // If no status filter is set, return all accounts
@@ -90,12 +91,11 @@ function Transactions() {
     return axios(config);
   };
 
-  // Добавление имени клиента в объект account
   const updatedAccounts = accounts.map((account) => {
     const client = clients.find((client) => client.id === account.client_id);
     return {
       ...account,
-      client_name: client ? client.name : "Неизвестен", // Если клиента нет, ставим 'Неизвестен'
+      client_name: client ? client.name : "Неизвестен",
     };
   });
 
@@ -153,7 +153,7 @@ function Transactions() {
   return (
     <div>
       <ToastContainer />
-      <h3 className="mb-4">Список транзакций</h3>
+      <h3 className="mb-4">{t("transactions.title")}</h3>
       <Row
         style={{
           display: "flex",
@@ -172,7 +172,7 @@ function Transactions() {
                 {t("dashboard.name")}: {card?.card_holder_name || "Неизвестно"}
               </p>
               <p>
-                {t("dashboard.name")}: {card?.card_number || "Неизвестно"}
+                {t("dashboard.cardNumber")}: {card?.card_number || "Неизвестно"}
               </p>
             </Card.Body>
           </Card>
@@ -182,7 +182,7 @@ function Transactions() {
         <input
           type="text"
           className="form-control me-3"
-          placeholder="Поиск счетов..."
+          placeholder={t("transactions.searchTitle")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -231,6 +231,7 @@ function Transactions() {
           onSort={handleSort}
           sortType={sortType}
           sortOrder={sortOrder}
+          t={t}
         />
       </StyledTableContainer>
     </div>
@@ -244,31 +245,31 @@ const statusMapping = {
   unpaid: "Не оплачено",
 };
 
-const AccountsTable = ({ accounts, onSort, sortType, sortOrder }) => (
+const AccountsTable = ({ accounts, onSort, sortType, sortOrder, t }) => (
   <StyledTable className="table table-hover">
     <thead>
       <tr>
         <th onClick={() => onSort("client_name")} style={{ cursor: "pointer" }}>
-          Имя клиента{" "}
+          {t("transactions.accountsTable.clientName")}{" "}
           {sortType === "client_name" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
         <th onClick={() => onSort("amount")} style={{ cursor: "pointer" }}>
-          Сумма{" "}
+        {t("transactions.accountsTable.amount")}{" "}
           {sortType === "amount" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
-        <th>Описание</th>
+        <th>{t("transactions.accountsTable.description")}</th>
         <th
           onClick={() => onSort("category_name")}
           style={{ cursor: "pointer" }}
         >
-          Категория{" "}
+          {t("transactions.accountsTable.category")}{" "}
           {sortType === "category_name" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
         <th onClick={() => onSort("date")} style={{ cursor: "pointer" }}>
-          Дата создания{" "}
+        {t("transactions.accountsTable.creationDate")}{" "}
           {sortType === "date" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>

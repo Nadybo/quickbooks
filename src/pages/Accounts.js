@@ -11,9 +11,11 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import { Modal, Button, Form, Dropdown } from "react-bootstrap";
 import "react-toastify/dist/ReactToastify.css";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 
 function Accounts() {
+  const { t } = useTranslation();
   const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState("");
   const [sortType, setSortType] = useState("client_name");
@@ -27,6 +29,7 @@ function Accounts() {
   const token = localStorage.getItem("userToken");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentAccount, setSelectedPaymentAccount] = useState(null);
+  const [card, setcard] = useState(null);
 
   const initialAccountData = {
     client_id: "",
@@ -36,7 +39,7 @@ function Accounts() {
     category_id: "",
   };
   const [accountData, setAccountData] = useState(initialAccountData);
-  // Модальное окно
+
   const handleShowModal = (account = null) => {
     setIsEditMode(!!account);
     setSelectedAccount(account);
@@ -46,7 +49,6 @@ function Accounts() {
 
   const handleCloseModal = () => setShowModal(false);
 
-  // API-запросы
   const apiRequest = (url, method = "GET", data = null) => {
     const config = {
       method,
@@ -59,11 +61,12 @@ function Accounts() {
 
   const fetchAllData = async () => {
     try {
-      const [categoriesResponse, clientsResponse, accountsResponse] =
+      const [categoriesResponse, clientsResponse, accountsResponse, cardsResponse] =
         await Promise.all([
           apiRequest("http://localhost:5000/categories"),
           apiRequest("http://localhost:5000/clients"),
           apiRequest("http://localhost:5000/accounts"),
+          apiRequest("http://localhost:5000/cards"),
         ]);
 
       const categoriesMap = Object.fromEntries(
@@ -74,7 +77,7 @@ function Accounts() {
       );
 
       setCategories(categoriesResponse.data);
-      setClients(clientsResponse.data); // Ensure it's an array
+      setClients(clientsResponse.data);
       setAccounts(
         accountsResponse.data.map((account) => ({
           ...account,
@@ -82,6 +85,9 @@ function Accounts() {
           client_name: clientsMap[account.client_id] || "Неизвестно",
         }))
       );
+      if (Array.isArray(cardsResponse.data) && cardsResponse.data.length > 0) {
+        setcard(cardsResponse.data[0]);
+      }
     } catch (error) {
       toast.error("Ошибка загрузки данных: " + error.message);
     }
@@ -91,22 +97,21 @@ function Accounts() {
     fetchAllData();
   }, []);
 
-  // Обработка изменений
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setAccountData({ ...accountData, [name]: value });
   };
 
   const handleClientChange = (e) => {
-    const selectedClientId = e.target.value; // Получаем id выбранного клиента
+    const selectedClientId = e.target.value; 
     console.log("Selected Client:", selectedClientId);
     setAccountData({
       ...accountData,
-      client_id: selectedClientId, // Обновляем client_id в состоянии
+      client_id: selectedClientId,
     });
   };
 
-  // Сохранение
   const saveAccount = async () => {
     const payload = {
       ...accountData,
@@ -142,7 +147,6 @@ function Accounts() {
     }
   };
 
-  // Удаление
   const deleteAccount = async (id) => {
     try {
       await axios.delete(`http://localhost:5000/accounts/${id}`, {
@@ -155,7 +159,6 @@ function Accounts() {
     }
   };
 
-  // Фильтрация и сортировка
   const filterAndSortAccounts = (accounts, search, sortType, sortOrder) => {
     const filtered = accounts.filter((account) =>
       ["client_name", "description", "amount", "status"].some((key) =>
@@ -181,7 +184,7 @@ function Accounts() {
   };
 
   const filterByStatus = (accounts, status) => {
-    if (!status) return accounts; // Если статус не выбран, возвращаем все записи
+    if (!status) return accounts; 
     return accounts.filter((account) => account.status === status);
   };
 
@@ -199,7 +202,6 @@ function Accounts() {
     }
   };
 
-  // Открыть модальное окно оплаты
   const handleShowPaymentModal = (account) => {
     if (!account) {
       console.error("Account is undefined");
@@ -209,38 +211,77 @@ function Accounts() {
     setShowPaymentModal(true);
   };
   
-  // Закрыть модальное окно оплаты
   const handleClosePaymentModal = () => {
     setShowPaymentModal(false);
     setSelectedPaymentAccount(null);
   };
 
-  const onPay = async (accountId) => {
-    try {
-      await axios.put(
-        `http://localhost:5000/accounts/pay/${accountId}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      toast.success("Счет успешно оплачен!");
-      fetchAllData(); // Обновляем данные
-      handleClosePaymentModal(); // Закрываем модальное окно
-    } catch (error) {
-      toast.error("Ошибка при оплате счета: " + error.message);
+  const expenseCategories = [1, 3]; 
+const incomeCategories = [4, 2]; 
+
+const onPay = async (accountId) => {
+  try {
+    const account = accounts.find((acc) => acc.account_id === accountId);
+
+    if (!account) {
+      toast.error("Счет не найден!");
+      return;
     }
-  };
+
+    const category_id = account.category_id;
+    let updatedBalance;
+
+    if (expenseCategories.includes(category_id)) {
+      updatedBalance = parseFloat(card.balance) - parseFloat(account.amount); 
+    } else if (incomeCategories.includes(category_id)) {
+      updatedBalance = parseFloat(card.balance) + parseFloat(account.amount); 
+    } else {
+      throw new Error("Неизвестная категория!");
+    }
+
+    if (isNaN(updatedBalance)) {
+      throw new Error("Некорректные данные для обновления баланса.");
+    }
+
+    // console.log("account.amount:", account.amount);
+    // console.log("card.balance:", card.balance);
+    // console.log("updatedBalance:", updatedBalance);
+
+    await axios.put(
+      `http://localhost:5000/cards/${card.id}`,
+      { balance: updatedBalance },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    await axios.put(
+      `http://localhost:5000/accounts/pay/${accountId}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    toast.success("Счет успешно оплачен!");
+    fetchAllData();
+    handleClosePaymentModal();
+  } catch (error) {
+    toast.error("Ошибка при оплате счета: " + error.message);
+    console.error("Ошибка при оплате счета:", error);
+  }
+};
+
+
+
+
+  
 
   return (
     <div>
       <ToastContainer />
-      <h3 className="mb-4">Список счетов</h3>
+      <h3 className="mb-4">{t("accounts.title")}</h3>
       <SearchContainer>
         <input
           type="text"
           className="form-control me-3"
-          placeholder="Поиск счетов..."
+          placeholder={t("accounts.searchTitle")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -278,6 +319,7 @@ function Accounts() {
           sortType={sortType}
           sortOrder={sortOrder}
           onPay={handleShowPaymentModal}
+          t={t}
         />
       </StyledTableContainer>
       <AccountModal
@@ -289,12 +331,14 @@ function Accounts() {
         onChange={handleInputChange}
         onSave={handleSaveAccount}
         onClientChange={handleClientChange}
+        t={t}
       />
       <PaymentModal
         show={showPaymentModal}
         onHide={handleClosePaymentModal}
         account={selectedPaymentAccount}
         onPay={onPay}
+        t={t}
       />
     </div>
   );
@@ -307,7 +351,6 @@ const statusMapping = {
   unpaid: "Не оплачено",
 };
 
-// Компоненты таблицы и модального окна
 const AccountsTable = ({
   accounts,
   onEdit,
@@ -315,41 +358,42 @@ const AccountsTable = ({
   onSort,
   sortType,
   sortOrder,
-  onPay
+  onPay,
+  t
 }) => (
   <StyledTable className="table table-hover">
     <thead>
       <tr>
         <th onClick={() => onSort("client_name")} style={{ cursor: "pointer" }}>
-          Имя клиента{" "}
+          {t("accounts.accountsTable.clientName")}{" "}
           {sortType === "client_name" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
         <th onClick={() => onSort("amount")} style={{ cursor: "pointer" }}>
-          Сумма{" "}
+        {t("accounts.accountsTable.amount")}{" "}
           {sortType === "amount" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
         <th onClick={() => onSort("status")} style={{ cursor: "pointer" }}>
-          Статус{" "}
+        {t("accounts.accountsTable.status")}{" "}
           {sortType === "status" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
-        <th>Описание</th>
+        <th>{t("accounts.accountsTable.description")}</th>
         <th
           onClick={() => onSort("category_name")}
           style={{ cursor: "pointer" }}
         >
-          Категория{" "}
+          {t("accounts.accountsTable.category")}{" "}
           {sortType === "category_name" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
         <th onClick={() => onSort("date")} style={{ cursor: "pointer" }}>
-          Дата создания{" "}
+        {t("accounts.accountsTable.creationDate")}{" "}
           {sortType === "date" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
-        <th>Действия</th>
+        <th>{t("accounts.accountsTable.actions")}</th>
       </tr>
     </thead>
     <tbody>
@@ -377,19 +421,19 @@ const AccountsTable = ({
                   size="sm"
                   id="dropdown-basic"
                 >
-                  Действия
+                {t("accounts.accountsTable.actions")}
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
                   <Dropdown.Item onClick={() => onEdit(account)}>
                     <FaEdit className="me-2" />
-                    Редактировать
+                    {t("accounts.accountsTable.editAccount")}
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => onDelete(account.account_id)}>
                     <FaTrash className="me-2" />
-                    Удалить
+                    {t("accounts.accountsTable.deleteAccount")}
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => onPay(account)}>
-                    💳 Оплатить
+                    💳 {t("accounts.accountsTable.pay")}
                   </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
@@ -412,71 +456,71 @@ const AccountModal = ({
   onChange,
   onSave,
   onClientChange,
+  t
 }) => (
   <Modal show={show} onHide={onHide}>
     <Modal.Header closeButton>
       <Modal.Title>
-        {accountData.client_name ? "Редактировать счет" : "Добавить счет"}
+        {accountData.client_name ? t("accounts.modal.editAccount") : t("accounts.modal.addAccount")}
       </Modal.Title>
     </Modal.Header>
     <Modal.Body>
       <Form>
         <Form.Group className="mb-3">
-          <Form.Label>Имя клиента</Form.Label>
+          <Form.Label>{t("accounts.modal.clientNameLabel")}</Form.Label>
           <Form.Select
-            name="client_id" // Используем client_id для связывания
-            value={accountData.client_id} // Привязываем к состоянию
-            onChange={onClientChange} // Обработчик изменения для клиента
+            name="client_id"
+            value={accountData.client_id}
+            onChange={onClientChange}
           >
-            <option value="">Выберите клиента</option>
+            <option value="">{t("accounts.modal.selectClient")}</option>
             {clients.map((client) => (
               <option key={client.id} value={client.id}>
                 {" "}
-                {/* value - client.id */}
-                {client.name} {/* Отображаем имя клиента */}
+                {client.name}
               </option>
             ))}
           </Form.Select>
         </Form.Group>
         <Form.Group className="mb-3">
-          <Form.Label>Сумма</Form.Label>
+          <Form.Label>{t("accounts.modal.amountLabel")}</Form.Label>
           <Form.Control
             type="number"
             name="amount"
-            placeholder="Введите сумму"
+            placeholder={t("accounts.modal.amountPlaceholder")}
             value={accountData.amount}
             onChange={onChange}
           />
         </Form.Group>
         <Form.Group className="mb-3">
-          <Form.Label>Статус</Form.Label>
+          <Form.Label>{t("accounts.modal.statusLabel")}</Form.Label>
           <Form.Select
             name="status"
             value={accountData.status}
             onChange={onChange}
           >
-            <option value="paid">Оплачено</option>
-            <option value="unpaid">Не оплачено</option>
+            <option value="paid">{t("accounts.modal.paidOption")}</option>
+            <option value="unpaid">{t("accounts.modal.unpaidOption")}</option>
           </Form.Select>
         </Form.Group>
         <Form.Group className="mb-3">
-          <Form.Label>Описание</Form.Label>
+          <Form.Label>{t("accounts.modal.descriptionLabel")}</Form.Label>
           <Form.Control
             type="textarea"
             name="description"
-            placeholder="Введите описание"
+            placeholder={t("accounts.modal.descriptionPlaceholder")}
             value={accountData.description}
             onChange={onChange}
           />
         </Form.Group>
         <Form.Group className="mb-3">
-          <Form.Label>Категория</Form.Label>
+          <Form.Label>{t("accounts.modal.categoryLabel")}</Form.Label>
           <Form.Select
             name="category_id"
             value={accountData.category_id}
             onChange={onChange}
           >
-            <option value="">Выберите категорию</option>
+            <option value="">{t("accounts.modal.selectCategory")}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -488,16 +532,16 @@ const AccountModal = ({
     </Modal.Body>
     <Modal.Footer>
       <Button variant="secondary" onClick={onHide}>
-        Отменить
+      {t("accounts.modal.cancelButton")}
       </Button>
       <Button variant="primary" onClick={onSave}>
-        Сохранить
+      {t("accounts.modal.saveButton")}
       </Button>
     </Modal.Footer>
   </Modal>
 );
 
-const PaymentModal = ({ show, onHide, account, onPay }) => {
+const PaymentModal = ({ show, onHide, account, onPay, t }) => {
   if (!account) return null;
 
   return (
@@ -507,33 +551,33 @@ const PaymentModal = ({ show, onHide, account, onPay }) => {
       </Modal.Header>
       <Modal.Body>
         <p>
-          <strong>Имя клиента:</strong> {account.client_name}
+          <strong>{t("accounts.modal.clientNameLabel")}:</strong> {account.client_name}
         </p>
         <p>
-          <strong>Сумма:</strong> {account.amount} ₽
+          <strong>{t("accounts.modal.amountLabel")}:</strong> {account.amount} ₽
         </p>
         <p>
-          <strong>Статус:</strong> {account.status}
+          <strong>{t("accounts.modal.statusLabel")}:</strong> {account.status}
         </p>
         <p>
-          <strong>Описание:</strong> {account.description}
+          <strong>{t("accounts.modal.descriptionLabel")}:</strong> {account.description}
         </p>
         <p>
-          <strong>Категория:</strong> {account.category_name}
+          <strong>{t("accounts.modal.categoryLabel")}:</strong> {account.category_name}
         </p>
         <p>
-          <strong>Дата создания:</strong>{" "}
+          <strong>{t("accounts.modal.creationDate")}:</strong>{" "}
           {new Date(account.created_at).toLocaleDateString()}
         </p>
         <hr />
-        <p>Вы уверены, что хотите оплатить этот счет?</p>
+        <p>{t("accounts.modal.textMsg")}</p>
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>
-          Отменить
+        {t("accounts.modal.cancelButton")}
         </Button>
         <Button variant="primary" onClick={() => onPay(account.account_id)}>
-          Оплатить
+        {t("accounts.accountsTable.pay")}
         </Button>
       </Modal.Footer>
     </Modal>

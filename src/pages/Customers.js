@@ -12,8 +12,10 @@ import { ToastContainer, toast } from "react-toastify";
 import { Modal, Button, Form, Dropdown } from "react-bootstrap";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 function Customers() {
+  const { t } = useTranslation();
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
   const [sortType, setSortType] = useState("name");
@@ -62,13 +64,12 @@ function Customers() {
           clientData,
           {
             headers: {
-              Authorization: `Bearer ${token}`, // Добавляем токен в заголовок
+              Authorization: `Bearer ${token}`,
             },
           }
         );
         toast.success("Клиент успешно обновлен!");
       } else {
-        // Добавление нового клиента
         await axios.post("http://localhost:5000/clients", clientData, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -82,11 +83,8 @@ function Customers() {
       toast.error("Ошибка при сохранении клиента: " + error.message);
     }
   };
-
-  // Уведомления
   const notifyError = (message) => toast.error(message);
 
-  // Получение данных с сервера
   const fetchClients = async () => {
     try {
       const response = await axios.get("http://localhost:5000/clients", {
@@ -108,7 +106,7 @@ function Customers() {
     try {
       await axios.delete(`http://localhost:5000/clients/${id}`, {
         headers: {
-          Authorization: `Bearer ${token}`, // Добавляем токен в заголовок
+          Authorization: `Bearer ${token}`,
         },
       });
       toast.success("Клиент успешно удален!");
@@ -118,7 +116,6 @@ function Customers() {
     }
   };
 
-  // Сортировка и фильтрация
   const filteredClients = clients
     .filter(
       (client) =>
@@ -143,12 +140,12 @@ function Customers() {
   return (
     <div>
       <ToastContainer />
-      <h3 className="mb-4">Список клиентов</h3>
+      <h3 className="mb-4">{t("customers.title")}</h3>
       <SearchContainer>
         <input
           type="text"
           className="form-control me-3"
-          placeholder="Поиск клиентов..."
+          placeholder={t("customers.searchTitle")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -187,7 +184,7 @@ function Customers() {
                   setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                 }}
               >
-                Имя{" "}
+                {t("customers.table.name")}{" "}
                 {sortType === "name" &&
                   (sortOrder === "asc" ? (
                     <FaSortAlphaDown />
@@ -201,7 +198,7 @@ function Customers() {
                   setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                 }}
               >
-                Компания{" "}
+                {t("customers.table.company")}{" "}
                 {sortType === "company_name" &&
                   (sortOrder === "asc" ? (
                     <FaSortAlphaDown />
@@ -215,7 +212,7 @@ function Customers() {
                   setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                 }}
               >
-                Телефон{" "}
+                {t("customers.table.phoneNumber")}{" "}
                 {sortType === "phone" &&
                   (sortOrder === "asc" ? (
                     <FaSortAlphaDown />
@@ -229,7 +226,7 @@ function Customers() {
                   setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                 }}
               >
-                Дата создания{" "}
+                {t("customers.table.creationDate")}{" "}
                 {sortType === "date" &&
                   (sortOrder === "asc" ? (
                     <FaSortAlphaDown />
@@ -237,7 +234,7 @@ function Customers() {
                     <FaSortAlphaUp />
                   ))}
               </th>
-              <th>Действия</th>
+              <th>{t("customers.table.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -254,16 +251,16 @@ function Customers() {
                       size="sm"
                       id="dropdown-menu-end"
                     >
-                      Действия
+                      {t("customers.table.actions")}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
                       <Dropdown.Item onClick={() => deleteClient(client.id)}>
                         <FaTrash />
-                        Удалить
+                        {t("customers.table.deleteAccount")}
                       </Dropdown.Item>
                       <Dropdown.Item onClick={() => handleShowModal(client)}>
                         <FaEdit />
-                        Редактировать
+                        {t("customers.table.editAccount")}
                       </Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
@@ -276,68 +273,74 @@ function Customers() {
         <Modal show={showModal} onHide={handleCloseModal}>
           <Modal.Header closeButton>
             <Modal.Title>
-              {isEditMode ? "Редактировать клиента" : "Добавить клиента"}
+              {isEditMode
+                ? t("customers.modal.editClient")
+                : t("customers.modal.addClient")}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
               <Form.Group className="mb-3">
-                <Form.Label>Имя</Form.Label>
+                <Form.Label>{t("customers.modal.nameLabel")}</Form.Label>
                 <Form.Control
                   type="text"
                   name="name"
-                  placeholder="Введите имя"
+                  placeholder={t("customers.modal.namePlaceholder")}
                   value={clientData.name}
                   onChange={handleInputChange}
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
+                <Form.Label>{t("customers.modal.emailLabel")}</Form.Label>
                 <Form.Control
                   type="email"
                   name="email"
-                  placeholder="Введите email"
+                  placeholder={t("customers.modal.emailPlaceholder")}
                   value={clientData.email}
                   onChange={handleInputChange}
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Телефон</Form.Label>
+                <Form.Label>{t("customers.modal.phoneLabel")}</Form.Label>
                 <Form.Control
                   type="text"
                   name="phone"
-                  placeholder="Введите телефон"
+                  placeholder={t("customers.modal.phonePlaceholder")}
                   value={clientData.phone}
                   onChange={handleInputChange}
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Адрес</Form.Label>
+                <Form.Label>{t("customers.modal.addressLabel")}</Form.Label>
                 <Form.Control
                   type="text"
                   name="address"
-                  placeholder="Введите адрес"
+                  placeholder={t("customers.modal.addressPlaceholder")}
                   value={clientData.address}
                   onChange={handleInputChange}
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Тип клиента</Form.Label>
+                <Form.Label>{t("customers.modal.clientTypeLabel")}</Form.Label>
                 <Form.Select
                   name="type"
                   value={clientData.type}
                   onChange={handleInputChange}
                 >
-                  <option value="client">Клиент</option>
-                  <option value="supplier">Поставщик</option>
+                  <option value="client">
+                    {t("customers.modal.clientOption")}
+                  </option>
+                  <option value="supplier">
+                    {t("customers.modal.supplierOption")}
+                  </option>
                 </Form.Select>
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Названия компания</Form.Label>
+                <Form.Label>{t("customers.modal.companyNameLabel")}</Form.Label>
                 <Form.Control
                   type="text"
                   name="company_name"
-                  placeholder="Введите названия компания"
+                  placeholder={t("customers.modal.companyNamePlaceholder")}
                   value={clientData.company_name}
                   onChange={handleInputChange}
                 />
@@ -346,10 +349,10 @@ function Customers() {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleCloseModal}>
-              Отменить
+              {t("customers.modal.cancelButton")}
             </Button>
             <Button variant="primary" onClick={handleSaveClient}>
-              Сохранить
+              {t("customers.modal.saveButton")}
             </Button>
           </Modal.Footer>
         </Modal>

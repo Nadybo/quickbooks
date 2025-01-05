@@ -4,36 +4,211 @@
   },
   "body": {
     "home": "Home",
-    "planner" : "Planner"
+    "planner": "Planner"
   },
   "sidebar": {
     "home": "Home",
     "transactions": "Transactions",
-    "accounts":"Accounts",
-    "reports" : "Reports",
-    "customers" : "Customers",
-    "categories" : "Categories",
-    "payments" : "Payments",
-    "invoices" : "invoices"
+    "accounts": "Accounts",
+    "reports": "Reports",
+    "customers": "Customers",
+    "categories": "Categories",
+    "payments": "Payments",
+    "invoices": "invoices"
   },
-  "form":{
-      "register":"Register",
-      "password":"Password",
-      "email":"Email address",
-      "text":"If you don't have an account, go here, ",
-      "btnLogin":"Login",
-      "textToLogin":"If you have an account, go here, ",
-      "login":"Login"
+  "form": {
+    "register": "Register",
+    "password": "Password",
+    "email": "Email address",
+    "text": "If you don't have an account, go here, ",
+    "btnLogin": "Login",
+    "textToLogin": "If you have an account, go here, ",
+    "login": "Login"
+  },
+  "modal": {
+    "userSettings": "User Settings",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "titleHome": "Home",
+    "creditCard": "FA lite credit card",
+    "balance": "Balance",
+    "name": "Name",
+    "cardNumber": "Card number",
+    "unknown": "Unknown",
+    "addCard": "Add card",
+    "incomeExpenses": "Income and expenses",
+    "category": "Distribution of the number of transactions by category",
+    "income": "Income",
+    "expenses": "Expenses",
+    "NumberTransactions": "Number of transactions",
+    "listCustomers": "List of customers",
+    "listAccounts": "List of accounts",
+    "listTasks": "Tasks",
+    "titlePlanner": "Planner"
+  },
+  "homeToast": {
+    "textCopySuccess": "The text is copied!",
+    "deleteTaskError": "Error deleting task.",
+    "deleteTaskSuccess": "Task deleted!",
+    "addTaskError": "Error adding task.",
+    "addTaskSuccess": "Task added!",
+    "addCardDateError": "Please indicate the card expiration date.",
+    "addCardError": "Error adding card.",
+    "addCardSuccess": "Card added successfully!",
+    "editTaskTitleError": "Task title cannot be empty.",
+    "updateTaskSuccess": "Task updated successfully!",
+    "updateTaskError": "Failed to update task."
+  },
+  "addCardModal": {
+    "title": "Add Card",
+    "cancelButtonText": "Cancel",
+    "addButtonText": "Add Card",
+    "cardNumberLabel": "Card Number",
+    "cardHolderNameLabel": "Cardholder Name",
+    "expirationDateLabel": "Expiration Date",
+    "cvvLabel": "CVV",
+    "cancelButton": "Cancel"
+  },
+  "taskBoard": {
+    "notStartedTitle": "Not Started",
+    "inProgressTitle": "In Progress",
+    "completedTitle": "Completed",
+    "actionsDropdown": "Actions",
+    "deleteTask": "Delete",
+    "editTask": "Edit",
+    "addTaskButton": "Add Task",
+    "modalTitleAddTask": "Add Task",
+    "modalTitleEditTask": "Edit Task",
+    "form": {
+      "titleLabel": "Title",
+      "descriptionLabel": "Description",
+      "statusLabel": "Status",
+      "statusOptions": {
+        "notStarted": "Not Started",
+        "inProgress": "In Progress",
+        "completed": "Completed"
+      }
     },
-    "modal":{
-      "userSettings":"User Settings",
-      "logout":"Logout"
-    },
-    "dashboard":{
-      "creditCard" : "FA lite credit card",
-      "balance" : "Balance",
-      "name" : "Name"
+    "cancelButtonText": "Cancel",
+    "saveChangesButtonText": "Save Changes",
+    "addButtonText": "Add"
+  },
+  "transactions": {
+    "searchTitle": "Search...",
+    "title": "List of transactions",
+    "accountsTable": {
+      "clientName": "Client Name",
+      "amount": "Amount",
+      "description": "Description",
+      "category": "Category",
+      "creationDate": "Creation Date"
     }
-
-
+  },
+  "accounts": {
+    "title": "List of accounts",
+    "searchTitle": "Search...",
+    "accountsTable": {
+      "clientName": "Client Name",
+      "amount": "Amount",
+      "status": "Status",
+      "description": "Description",
+      "category": "Category",
+      "creationDate": "Creation Date",
+      "actions": "Actions",
+      "editAccount": "Edit",
+      "deleteAccount": "Delete",
+      "pay": "Pay"
+    },
+    "modal": {
+      "editAccount": "Edit Account",
+      "addAccount": "Add Account",
+      "clientNameLabel": "Client Name",
+      "selectClient": "Select Client",
+      "amountLabel": "Amount",
+      "amountPlaceholder": "Enter Amount",
+      "statusLabel": "Status",
+      "paidOption": "Paid",
+      "unpaidOption": "Unpaid",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Enter Description",
+      "categoryLabel": "Category",
+      "selectCategory": "Select Category",
+      "cancelButton": "Cancel",
+      "saveButton": "Save",
+      "creationDate": "Creation Date",
+      "textMsg": "Are you sure you want to pay this invoice?"
+    }
+  },
+  "customers": {
+    "title": "Customers List",
+    "searchTitle": "Search...",
+    "table": {
+      "name": "Name",
+      "company": "Company",
+      "phoneNumber": "Phone number",
+      "creationDate": "Creation Date",
+      "actions": "Actions",
+      "editAccount": "Edit",
+      "deleteAccount": "Delete"
+    },
+    "modal": {
+      "editClient": "Edit Client",
+      "addClient": "Add Client",
+      "nameLabel": "Name",
+      "namePlaceholder": "Enter Name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Enter Email",
+      "phoneLabel": "Phone",
+      "phonePlaceholder": "Enter Phone",
+      "addressLabel": "Address",
+      "addressPlaceholder": "Enter Address",
+      "clientTypeLabel": "Client Type",
+      "clientOption": "Client",
+      "supplierOption": "Supplier",
+      "companyNameLabel": "Company Name",
+      "companyNamePlaceholder": "Enter Company Name",
+      "cancelButton": "Cancel",
+      "saveButton": "Save"
+    }
+  },
+  "categories": {
+    "listTitle": "List of categories",
+    "searchPlaceholder": "Search categories...",
+    "nameColumn": "Title",
+    "descriptionColumn": "Description",
+    "actionsColumn": "Actions",
+    "actionsButton": "Actions",
+    "deleteAction": "Delete",
+    "editAction": "Edit",
+    "editCategory": "Edit category",
+    "addCategory": "Add category",
+    "nameLabel": "Title",
+    "namePlaceholder": "Enter name",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Enter description",
+    "cancelButton": "Cancel",
+    "saveButton": "Save"
+  },
+  "reports": {
+    "selectReportTypes": "Select the report types to export:",
+    "paidBills": "Paid Bills",
+    "individualUserReports": "Individual User Reports",
+    "unpaidBills": "Unpaid Bills",
+    "incomeExpenses": "Income and Expense",
+    "clientsReport": "Client Report",
+    "transactionsReport": "Transaction Report",
+    "exportExcel": "Export to Excel",
+    "exportCsv": "Export to CSV",
+    "exportPdf": "Export to PDF",
+    "exportChart": "Export Chart",
+    "exportChartMenu": "Export Chart",
+    "doughnutChart": "Doughnut Chart",
+    "lineChart": "Line Chart",
+    "table": {
+      "reportName": "Report name",
+      "creationDate": "Creation Date",
+      "searchTitle" : "Search..."
+    }
+  }
 }

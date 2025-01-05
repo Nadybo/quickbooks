@@ -4,7 +4,7 @@ import axios from "axios";
 import styled from "styled-components";
 import { FaSortAlphaDown, FaSortAlphaUp } from "react-icons/fa";
 import { Card, Col, Row, Button, Form, Dropdown } from "react-bootstrap";
-// import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -32,7 +32,7 @@ ChartJS.register(
   Legend
 );
 function Reports() {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const [reports, setReports] = useState([]);
   const [search, setSearch] = useState("");
   const [sortType, setSortType] = useState("");
@@ -128,7 +128,7 @@ function Reports() {
     setSelectedData((prev) => ({ ...prev, [name]: checked }));
   };
 
-  const exportData = (format) => {
+  const exportData = async (format) => {
     const dataToExport = [];
 
     if (selectedData.clientsReport) {
@@ -168,23 +168,62 @@ function Reports() {
       );
     }
 
-    if (format === "excel") {
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-      XLSX.writeFile(workbook, "exported_data.xlsx");
-    } else if (format === "csv") {
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      const csv = XLSX.utils.sheet_to_csv(worksheet);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    try {
+      // Сохранение в Excel/CSV/PDF
+      if (format === "excel") {
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+        XLSX.writeFile(workbook, "exported_data.xlsx");
+      } else if (format === "csv") {
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", "exported_data.csv");
+        link.click();
+      } else if (format === "pdf") {
+        const doc = new jsPDF();
+        doc.autoTable({ body: dataToExport });
+        doc.save("exported_data.pdf");
+      }
+
+      // Добавление записи в базу данных
+      const reportName = `Exported ${format.toUpperCase()} Report`;
+      const reportData = JSON.stringify(dataToExport);
+
+      await apiRequest("http://localhost:5000/reports", "POST", {
+        report_name: reportName,
+        report_data: reportData,
+      });
+      fetchAllData();
+      toast.success(
+        `Данные успешно экспортированы в ${format} и сохранены в отчетах.`
+      );
+    } catch (error) {
+      toast.error("Ошибка при экспорте данных: " + error.message);
+    }
+  };
+
+  const exportChart = async (chartId) => {
+    const chartElement = document.getElementById(chartId);
+
+    if (!chartElement) {
+      toast.error("График не найден!");
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(chartElement);
+      const image = canvas.toDataURL("image/png");
+
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.setAttribute("download", "exported_data.csv");
+      link.href = image;
+      link.download = `${chartId}.png`;
       link.click();
-    } else if (format === "pdf") {
-      const doc = new jsPDF();
-      doc.autoTable({ body: dataToExport });
-      doc.save("exported_data.pdf");
+    } catch (error) {
+      toast.error("Ошибка при экспорте графика: " + error.message);
     }
   };
 
@@ -212,27 +251,6 @@ function Reports() {
       },
     ],
   };
-  const exportChart = async (chartId) => {
-    const chartElement = document.getElementById(chartId);
-
-    if (!chartElement) {
-      toast.error("График не найден!");
-      return;
-    }
-
-    try {
-      const canvas = await html2canvas(chartElement);
-      const image = canvas.toDataURL("image/png");
-
-      const link = document.createElement("a");
-      link.href = image;
-      link.download = `${chartId}.png`;
-      link.click();
-    } catch (error) {
-      toast.error("Ошибка при экспорте графика: " + error.message);
-    }
-  };
-
   const multiAxisChartData = {
     labels: incomeData.map((account) =>
       new Date(account.created_at).toLocaleDateString()
@@ -288,7 +306,7 @@ function Reports() {
                   <input
                     className="form-control me-3"
                     type="text"
-                    placeholder="Поиск по названию отчета..."
+                    placeholder={t("reports.table.searchTitle")}
                     value={search}
                     onChange={handleSearch}
                   />
@@ -299,6 +317,7 @@ function Reports() {
                     onSort={handleSort}
                     sortType={sortType}
                     sortOrder={sortOrder}
+                    t={t}
                   />
                 </StyledTableContainer>
               </div>
@@ -308,10 +327,9 @@ function Reports() {
         <Col md={7} className="mt-3">
           <Card>
             <Card.Body>
-              <h5>Выберите типы отчетов для экспорта:</h5>
+              <h5>{t("reports.selectReportTypes")}</h5>
               <Form>
                 <CheckboxContainer>
-
                   <CardWrapper
                     className={selectedData.paidBills ? "selected" : ""}
                     onClick={() =>
@@ -331,7 +349,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="paidBills">
-                      Оплаченные счета
+                    {t("reports.paidBills")}
                     </CheckboxLabel>
                   </CardWrapper>
                   <CardWrapper
@@ -355,7 +373,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="individualUserReports">
-                      Индивидуальные отчеты пользователя
+                    {t("reports.individualUserReports")}
                     </CheckboxLabel>
                   </CardWrapper>
                 </CheckboxContainer>
@@ -380,7 +398,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="unpaidBills">
-                      Неоплаченные счета
+                    {t("reports.unpaidBills")}
                     </CheckboxLabel>
                   </CardWrapper>
 
@@ -403,12 +421,11 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="incomeExpenses">
-                      Доходы и расходы
+                    {t("reports.incomeExpenses")}
                     </CheckboxLabel>
                   </CardWrapper>
                 </CheckboxContainer>
 
-                {/* Новые отчеты */}
                 <CheckboxContainer>
                   <CardWrapper
                     className={selectedData.clientsReport ? "selected" : ""}
@@ -429,7 +446,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="clientsReport">
-                      Отчет по клиентам
+                    {t("reports.clientsReport")}
                     </CheckboxLabel>
                   </CardWrapper>
 
@@ -454,7 +471,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="transactionsReport">
-                      Отчет по транзакциям
+                    {t("reports.transactionsReport")}
                     </CheckboxLabel>
                   </CardWrapper>
                 </CheckboxContainer>
@@ -477,28 +494,21 @@ function Reports() {
 
               <div className="mt-4 d-flex align-items-center">
                 <Button variant="success" onClick={() => exportData("excel")}>
-                  Экспорт в Excel
+                {t("reports.exportExcel")}
                 </Button>
                 <Button
                   variant="success"
                   className="ms-2"
                   onClick={() => exportData("csv")}
                 >
-                  Экспорт в CSV
+                  {t("reports.exportCsv")}
                 </Button>
                 <Button
                   variant="success"
                   className="ms-2"
                   onClick={() => exportData("pdf")}
                 >
-                  Экспорт в PDF
-                </Button>
-                <Button
-                  variant="success"
-                  className="ms-2"
-                  onClick={() => exportChart("doughnutChart")}
-                >
-                  Экспорт графика
+                 {t("reports.exportPdf")}
                 </Button>
                 <Dropdown className="ms-2">
                   <Dropdown.Toggle
@@ -506,14 +516,14 @@ function Reports() {
                     size="sm"
                     id="dropdown-menu-end"
                   >
-                    Экспорт графика
+                    {t("reports.exportChart")}
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item onClick={() => exportChart("doughnutChart")}>
-                      Пончиковая диаграмма
+                    {t("reports.doughnutChart")}
                     </Dropdown.Item>
                     <Dropdown.Item onClick={() => exportChart("LineChart")}>
-                      Линейная диаграмма
+                    {t("reports.lineChart")}
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
@@ -528,24 +538,23 @@ function Reports() {
 
 export default Reports;
 
-const ReportsTable = ({ reports, onSort, sortType, sortOrder }) => (
+const ReportsTable = ({ reports, onSort, sortType, sortOrder, t }) => (
   <StyledTable className="table table-hover">
     <thead>
       <tr>
-        <th onClick={() => onSort("client_name")} style={{ cursor: "pointer" }}>
-          Название отчета{" "}
-          {sortType === "client_name" &&
+        <th onClick={() => onSort("report_name")} style={{ cursor: "pointer" }}>
+          {t("reports.table.reportName")}{" "}
+          {sortType === "report_name" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
         <th
           onClick={() => onSort("generated_at")}
           style={{ cursor: "pointer" }}
         >
-          Дата генерации{" "}
+          {t("reports.table.creationDate")}{" "}
           {sortType === "generated_at" &&
             (sortOrder === "asc" ? <FaSortAlphaDown /> : <FaSortAlphaUp />)}
         </th>
-        <th>Данные отчета</th>
       </tr>
     </thead>
     <tbody>
@@ -553,7 +562,6 @@ const ReportsTable = ({ reports, onSort, sortType, sortOrder }) => (
         <tr key={report.id}>
           <td>{report.report_name}</td>
           <td>{new Date(report.generated_at).toLocaleDateString()}</td>
-          <td>{report.report_data}</td>
         </tr>
       ))}
     </tbody>

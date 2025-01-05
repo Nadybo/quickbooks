@@ -51,20 +51,6 @@ const Sidebar = () => {
               >
                 {t('sidebar.customers')}
               </StyledLink>
-              {/* <StyledLink
-                className="nav-link"
-                to="/invoices"
-                aria-current={location.pathname === '/invoices' ? 'page' : undefined}
-              >
-                {t('sidebar.invoices')}
-              </StyledLink>
-              <StyledLink
-                className="nav-link"
-                to="/payments"
-                aria-current={location.pathname === '/payments' ? 'page' : undefined}
-              >
-                {t('sidebar.payments')}
-              </StyledLink> */}
               <StyledLink
                 className="nav-link"
                 to="/categories"
@@ -96,7 +82,6 @@ const Sidebar = () => {
 
 export default Sidebar;
 
-// Стили
 const StyledLink = styled(({ ...props }) => <Link {...props} />)`
   text-decoration: none;
   color: white;

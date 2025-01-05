@@ -10,7 +10,6 @@ const Navbar = ({ onLogout }) => {
   const { t, i18n } = useTranslation();
   const [showModal, setShowModal] = useState(false);
 
-  // Функция для получения данных пользователя из токена
   const getUserDataFromToken = () => {
     const token = localStorage.getItem('userToken');
     if (token) {
@@ -20,10 +19,10 @@ const Navbar = ({ onLogout }) => {
         email: decodedToken.email, 
       };
     }
-    return { name: '', role: '', email: '' }; // Возвращаем пустые данные, если нет токена
+    return { name: '', role: '', email: '' }; 
   };
 
-  const user = getUserDataFromToken(); // Получаем данные пользователя из токена
+  const user = getUserDataFromToken();
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
@@ -39,9 +38,9 @@ const Navbar = ({ onLogout }) => {
       <StyledNavbar>
         <NavbarContainer>
           <Nav>
-            <NavItem>First item</NavItem>
+            {/* <NavItem>First item</NavItem>
             <NavItem>Second item</NavItem>
-            <NavItem>Third item</NavItem>
+            <NavItem>Third item</NavItem> */}
           </Nav>
           <RightSection>
             <ButtonGroup>

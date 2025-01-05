@@ -1,41 +1,214 @@
 {
-    "header": {
-      "welcome": "Добро пожаловать на наш сайт!"
+  "header": {
+    "welcome": "Добро пожаловать на наш сайт!"
+  },
+  "body": {
+    "home": "Главная",
+    "planner": "Планировщик"
+  },
+  "sidebar": {
+    "home": "Главная",
+    "transactions": "Транзакции",
+    "accounts": "Счета",
+    "reports": "Отчеты",
+    "customers": "Клиенты",
+    "categories": "Категории",
+    "payments": "Платежи",
+    "invoices": "Cчета-фактуры"
+  },
+  "form": {
+    "register": "Зарегистрировать",
+    "password": "Пароль",
+    "email": "Электронная почта",
+    "text": "Если у вас нет аккаунта, перейдите сюда, ",
+    "btnLogin": "Войти",
+    "textToLogin": "Если у вас есть аккаунт, перейдите сюда, ",
+    "login": "Вход"
+  },
+  "modal": {
+    "userSettings": "Пользовательские настройки",
+    "logout": "Выйти"
+  },
+  "dashboard": {
+    "titleHome": "Главная",
+    "creditCard": "Кредитная карта FA lite",
+    "balance": "Баланс",
+    "name": "Имя",
+    "cardNumber": "Номер карта",
+    "unknown": "Неизвестно",
+    "addCard": "Добавить карточку",
+    "incomeExpenses": "Доходы и затраты",
+    "category": "Распределение количества транзакций по категориям",
+    "income": "Доходы",
+    "expenses": "Расходы",
+    "NumberTransactions": "Количество транзакций",
+    "listCustomers": "Список клиентов",
+    "listAccounts": "Список счетов",
+    "listTasks": "Задачи",
+    "titlePlanner": "Планировщик"
+  },
+  "homeToast": {
+    "textCopySuccess": "Текст скопирован!",
+    "deleteTaskError": "Ошибка при удалении задачи.",
+    "deleteTaskSuccess": "Задача удалена!",
+    "addTaskError": "Ошибка при добавлении задачи.",
+    "addTaskSuccess": "Задача добавлена!",
+    "addCardDateError": "Пожалуйста, укажите срок действия карты.",
+    "addCardError": "Ошибка при добавлении карты.",
+    "addCardSuccess": "Карта успешно добавлено!",
+    "editTaskTitleError": "Название задачи не может быть пустым.",
+    "updateTaskSuccess": "Задача успешно обновлена!",
+    "updateTaskError": "Не удалось обновить задачу."
+  },
+  "addCardModal": {
+    "title": "Добавить карту",
+    "cancelButtonText": "Отмена",
+    "addButtonText": "Добавить карту",
+    "cardNumberLabel": "Номер карты",
+    "cardHolderNameLabel": "Имя владельца карты",
+    "expirationDateLabel": "Срок действия",
+    "cvvLabel": "CVV",
+    "cancelButton": "Отмена"
+  },
+  "taskBoard": {
+    "notStartedTitle": "Не начато",
+    "inProgressTitle": "В процессе",
+    "completedTitle": "Завершено",
+    "actionsDropdown": "Действия",
+    "deleteTask": "Удалить",
+    "editTask": "Изменить",
+    "addTaskButton": "Добавить задачу",
+    "modalTitleAddTask": "Добавить задачу",
+    "modalTitleEditTask": "Изменить задачу",
+    "form": {
+      "titleLabel": "Заголовок",
+      "descriptionLabel": "Описание",
+      "statusLabel": "Статус",
+      "statusOptions": {
+        "notStarted": "Не начато",
+        "inProgress": "В процессе",
+        "completed": "Завершено"
+      }
     },
-    "body": {
-      "home": "Главная",
-      "planner" : "Планировщик"
+    "cancelButtonText": "Отмена",
+    "saveChangesButtonText": "Сохранить изменения",
+    "addButtonText": "Добавить"
+  },
+  "transactions": {
+    "searchTitle": "Поиск счетов...",
+    "title": "Список транзакций",
+    "accountsTable": {
+      "clientName": "Имя клиента",
+      "amount": "Сумма",
+      "description": "Описание",
+      "category": "Категория",
+      "creationDate": "Дата создания"
+    }
+  },
+  "accounts": {
+    "title": "Список счетов",
+    "searchTitle": "Поиск...",
+    "accountsTable": {
+      "clientName": "Имя клиента",
+      "amount": "Сумма",
+      "status": "Статус",
+      "description": "Описание",
+      "category": "Категория",
+      "creationDate": "Дата создания",
+      "actions": "Действия",
+      "editAccount": "Редактировать",
+      "deleteAccount": "Удалить",
+      "pay": "Оплатить"
     },
-    "sidebar": {
-     "home": "Главная",
-      "transactions": "Транзакции",
-      "accounts":"Счета",
-      "reports" : "Отчеты",
-      "customers" : "Клиенты",
-      "categories" :"Категории",
-      "payments" : "Платежи",
-      "invoices" : "Cчета-фактуры"
+    "modal": {
+      "editAccount": "Редактировать счет",
+      "addAccount": "Добавить счет",
+      "clientNameLabel": "Имя клиента",
+      "selectClient": "Выберите клиента",
+      "amountLabel": "Сумма",
+      "amountPlaceholder": "Введите сумму",
+      "statusLabel": "Статус",
+      "paidOption": "Оплачено",
+      "unpaidOption": "Не оплачено",
+      "descriptionLabel": "Описание",
+      "descriptionPlaceholder": "Введите описание",
+      "categoryLabel": "Категория",
+      "selectCategory": "Выберите категорию",
+      "cancelButton": "Отменить",
+      "saveButton": "Сохранить",
+      "creationDate": "Дата создания",
+      "textMsg": "Вы уверены, что хотите оплатить этот счет?"
+    }
+  },
+  "customers": {
+    "title": "Список клиентов",
+    "searchTitle": "Поиск...",
+    "table": {
+      "name": "Имя",
+      "company": "Компания",
+      "phoneNumber": "Телефон",
+      "creationDate": "Дата создания",
+      "actions": "Действия",
+      "editAccount": "Редактировать",
+      "deleteAccount": "Удалить"
     },
-    "form":{
-      "register":"Зарегистрировать",
-      "password":"Пароль",
-      "email":"Электронная почта",
-      "text":"Если у вас нет аккаунта, перейдите сюда, ",
-      "btnLogin":"Войти",
-      "textToLogin":"Если у вас есть аккаунт, перейдите сюда, ",
-      "login":"Вход"
-
-
-
-    },
-    "modal":{
-      "userSettings":"Пользовательские настройки",
-      "logout":"Выйти"
-    },
-    "dashboard":{
-      "creditCard" : "Кредитная карта FA lite",
-      "balance" : "Баланс",
-      "name" : "Имя"
+    "modal": {
+      "editClient": "Редактировать клиента",
+      "addClient": "Добавить клиента",
+      "nameLabel": "Имя",
+      "namePlaceholder": "Введите имя",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Введите email",
+      "phoneLabel": "Телефон",
+      "phonePlaceholder": "Введите телефон",
+      "addressLabel": "Адрес",
+      "addressPlaceholder": "Введите адрес",
+      "clientTypeLabel": "Тип клиента",
+      "clientOption": "Клиент",
+      "supplierOption": "Поставщик",
+      "companyNameLabel": "Названия компания",
+      "companyNamePlaceholder": "Введите названия компания",
+      "cancelButton": "Отменить",
+      "saveButton": "Сохранить"
+    }
+  },
+  "categories": {
+    "listTitle": "Список категорий",
+    "searchPlaceholder": "Поиск категорий...",
+    "nameColumn": "Название",
+    "descriptionColumn": "Описание",
+    "actionsColumn": "Действия",
+    "actionsButton": "Действия",
+    "deleteAction": "Удалить",
+    "editAction": "Редактировать",
+    "editCategory": "Редактировать категорию",
+    "addCategory": "Добавить категорию",
+    "nameLabel": "Название",
+    "namePlaceholder": "Введите название",
+    "descriptionLabel": "Описание",
+    "descriptionPlaceholder": "Введите описание",
+    "cancelButton": "Отменить",
+    "saveButton": "Сохранить"
+  },
+  "reports": {
+    "selectReportTypes": "Выберите типы отчетов для экспорта:",
+    "paidBills": "Оплаченные счета",
+    "individualUserReports": "Индивидуальные отчеты пользователя",
+    "unpaidBills": "Неоплаченные счета",
+    "incomeExpenses": "Доходы и расходы",
+    "clientsReport": "Отчет по клиентам",
+    "transactionsReport": "Отчет по транзакциям",
+    "exportExcel": "Экспорт в Excel",
+    "exportCsv": "Экспорт в CSV",
+    "exportPdf": "Экспорт в PDF",
+    "exportChart": "Экспорт графика",
+    "exportChartMenu": "Экспорт графика",
+    "doughnutChart": "Пончиковая диаграмма",
+    "lineChart": "Линейная диаграмма",
+    "table": {
+      "reportName": "Название отчета",
+      "creationDate": "Дата создания",
+      "searchTitle": "Поиск..."
     }
   }
-  
+}

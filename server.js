@@ -13,7 +13,6 @@ const port = 5000;
 app.use(cors());
 app.use(bodyParser.json());
 
-
 const db = mysql.createConnection({
   host: "127.0.0.1",
   user: "root",
@@ -266,7 +265,7 @@ app.get("/accounts", authenticateToken, (req, res) => {
 });
 
 app.put("/accounts/pay/:id", authenticateToken, (req, res) => {
-  const userId = req.user.userId; 
+  const userId = req.user.userId;
   const accountId = req.params.id;
 
   const checkQuery = `
@@ -419,7 +418,7 @@ app.put("/accounts/:id", async (req, res) => {
 
     const values = [client_id, amount, status, description, category_id, id];
 
-    const result = await db.execute(query, values); 
+    const result = await db.execute(query, values);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Запись не найдена." });
@@ -499,7 +498,7 @@ app.delete("/categories/:id", authenticateToken, (req, res) => {
 });
 
 app.get("/users", authenticateToken, (req, res) => {
-  const userId = req.user.userId; 
+  const userId = req.user.userId;
 
   const query = `SELECT * FROM users WHERE id = ?`;
 
@@ -514,7 +513,7 @@ app.get("/users", authenticateToken, (req, res) => {
 
 app.put("/users", authenticateToken, (req, res) => {
   const { amount } = req.body;
-  const userId = req.user.id; 
+  const userId = req.user.id;
 
   const query = "UPDATE users SET amount = ? WHERE id = ?";
   db.query(query, [amount, userId], (err, result) => {
@@ -616,7 +615,7 @@ app.delete("/tasks/:id", authenticateToken, (req, res) => {
 });
 
 app.post("/cards", authenticateToken, (req, res) => {
-  const userId = req.user.userId; 
+  const userId = req.user.userId;
   const { card_number, card_holder_name, expiration_date, cvv } = req.body;
 
   const query = `INSERT INTO cards (user_id, card_number, card_holder_name, expiration_date, cvv) 
@@ -650,18 +649,24 @@ app.get("/cards", authenticateToken, (req, res) => {
 });
 
 app.put("/cards/:id", authenticateToken, (req, res) => {
-  const userId = req.user.userId; 
-  const cardId = req.params.id; 
-  const { card_number, card_holder_name, expiration_date, cvv } = req.body;
+  const userId = req.user.userId;
+  const cardId = req.params.id;
+  const { balance } = req.body; // balance из тела запроса
 
-  const query = `UPDATE cards 
-                   SET card_number = ?, card_holder_name = ?, expiration_date = ?, cvv = ?,
-                       updated_at = CURRENT_TIMESTAMP
-                   WHERE id = ? AND user_id = ?`;
+  if (balance === undefined) {
+    return res.status(400).send({ message: "Баланс не может быть undefined." });
+  }
+
+  const query = `
+    UPDATE cards 
+    SET 
+      balance = COALESCE(?, balance), 
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ? AND user_id = ?`;
 
   db.query(
     query,
-    [card_number, card_holder_name, expiration_date, cvv, cardId, userId],
+    [balance, cardId, userId],
     (err, result) => {
       if (err) {
         console.error("Ошибка обновления карты:", err);
@@ -675,8 +680,11 @@ app.put("/cards/:id", authenticateToken, (req, res) => {
   );
 });
 
+
+
+
 app.delete("/cards/:id", authenticateToken, (req, res) => {
-  const userId = req.user.userId; 
+  const userId = req.user.userId;
   const cardId = req.params.id;
 
   const query = `DELETE FROM cards WHERE id = ? AND user_id = ?`;
@@ -694,18 +702,38 @@ app.delete("/cards/:id", authenticateToken, (req, res) => {
 });
 
 app.get("/reports", authenticateToken, (req, res) => {
-    const userId = req.user.userId; 
-  
-    const query = `SELECT * FROM reports WHERE user_id = ?`;
-  
-    db.query(query, [userId], (err, results) => {
-      if (err) {
-        console.error("Ошибка получения карт:", err);
-        return res.status(500).send({ message: "Ошибка сервера." });
-      }
-      res.send(results);
-    });
+  const userId = req.user.userId;
+
+  const query = `SELECT * FROM reports WHERE user_id = ?`;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Ошибка получения карт:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res.send(results);
   });
+});
+
+app.post("/reports", authenticateToken, (req, res) => {
+  const userId = req.user.userId; // ID пользователя из токена
+  const { report_name, report_data } = req.body;
+
+  const query = `
+      INSERT INTO reports (user_id, report_name, report_data) 
+      VALUES (?, ?, ?)
+    `;
+
+  db.query(query, [userId, report_name, report_data], (err, result) => {
+    if (err) {
+      console.error("Ошибка при добавлении отчета:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
+    }
+    res
+      .status(201)
+      .send({ message: "Отчет успешно добавлен.", reportId: result.insertId });
+  });
+});
 
 app.listen(port, () => {
   console.log(`Сервер запущен на порту ${port}`);
