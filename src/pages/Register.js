@@ -46,7 +46,7 @@ function RegisterForm() {
         <div className="container mt-5">
             <ToastContainer />
     <div className="row justify-content-center">
-        <div className="col-md-6">
+        <div className="col-md-5">
             <h2 className="text-center mb-4">Регистрация</h2>
             <form onSubmit={handleSubmit}>
                 <FloatingLabel label="Имя" className="mb-3">
@@ -82,7 +82,7 @@ function RegisterForm() {
                     />
                 </FloatingLabel>
 
-                <Button type="submit" className="btn btn-primary w-100">
+                <Button type="submit" className="btn btn-success w-100">
                     {t('form.register')}
                 </Button>
 

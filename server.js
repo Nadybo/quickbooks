@@ -566,12 +566,6 @@ app.put("/tasks/:id", authenticateToken, (req, res) => {
   const { title, description, status, start_date, due_date } = req.body;
   const userId = req.user.userId;
 
-  if (!title || title.trim() === "") {
-    return res
-      .status(400)
-      .json({ message: "Название задачи не может быть пустым." });
-  }
-
   const query = `
       UPDATE tasks
       SET title = ?, description = ?, status = ?, start_date = ?, due_date = ?, updated_at = NOW()
@@ -629,6 +623,7 @@ app.post("/cards", authenticateToken, (req, res) => {
         console.error("Ошибка при добавлении карты:", err);
         return res.status(500).send({ message: "Ошибка сервера." });
       }
+
       res.status(201).send({ message: "Карта успешно добавлена." });
     }
   );
@@ -664,24 +659,17 @@ app.put("/cards/:id", authenticateToken, (req, res) => {
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND user_id = ?`;
 
-  db.query(
-    query,
-    [balance, cardId, userId],
-    (err, result) => {
-      if (err) {
-        console.error("Ошибка обновления карты:", err);
-        return res.status(500).send({ message: "Ошибка сервера." });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).send({ message: "Карта не найдена." });
-      }
-      res.send({ message: "Карта успешно обновлена." });
+  db.query(query, [balance, cardId, userId], (err, result) => {
+    if (err) {
+      console.error("Ошибка обновления карты:", err);
+      return res.status(500).send({ message: "Ошибка сервера." });
     }
-  );
+    if (result.affectedRows === 0) {
+      return res.status(404).send({ message: "Карта не найдена." });
+    }
+    res.send({ message: "Карта успешно обновлена." });
+  });
 });
-
-
-
 
 app.delete("/cards/:id", authenticateToken, (req, res) => {
   const userId = req.user.userId;

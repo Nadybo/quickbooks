@@ -75,7 +75,7 @@ function LoginPage({ onLogin }) {
                             />
                         </FloatingLabel>
 
-                        <Button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
+                        <Button type="submit" className="btn btn-success w-100" disabled={isLoading}>
                             {isLoading ? 'Загрузка...' : 'Войти'}
                         </Button>
                         <div className="mt-3 text-center">

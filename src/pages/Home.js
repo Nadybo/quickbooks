@@ -66,7 +66,6 @@ function Home() {
   const handleShowCardModal = () => setCardModal(true);
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = () => setShowModal(true);
-  const [onAddCard] = useState([]);
   const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
   const [tasks, setTasks] = useState({
@@ -143,65 +142,63 @@ function Home() {
     });
   };
 
+  const fetchCard = async () => {
+    try {
+      const cardsResponse = await axios.get("http://localhost:5000/cards", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (Array.isArray(cardsResponse.data) && cardsResponse.data.length > 0) {
+        setCards(cardsResponse.data);
+      }
+    } catch (error) {
+      console.error("Ошибка при загрузке задач:", error);
+    }
+  };
+
   const token = localStorage.getItem("userToken");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const clientsResponse = await axios.get(
-          "http://localhost:5000/clients",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setClients(clientsResponse.data);
+  const fetchData = async () => {
+    try {
+      const clientsResponse = await axios.get("http://localhost:5000/clients", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setClients(clientsResponse.data);
 
-        const accountsResponse = await axios.get(
-          "http://localhost:5000/accounts",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+      const accountsResponse = await axios.get(
+        "http://localhost:5000/accounts",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-        const categoriesResponse = await axios.get(
-          "http://localhost:5000/categories",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+      const categoriesResponse = await axios.get(
+        "http://localhost:5000/categories",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-        const categoryMap = categoriesResponse.data.reduce((acc, category) => {
-          acc[category.id] = category.name;
-          return acc;
-        }, {});
+      const categoryMap = categoriesResponse.data.reduce((acc, category) => {
+        acc[category.id] = category.name;
+        return acc;
+      }, {});
 
-        setCategories(categoryMap);
+      setCategories(categoryMap);
 
-        const cardsResponse = await axios.get("http://localhost:5000/cards", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      const income = accountsResponse.data.filter(
+        (account) =>
+          account.status === "paid" &&
+          (account.category_id === 2 || account.category_id === 4)
+      );
+      const expenses = accountsResponse.data.filter(
+        (account) =>
+          account.status === "paid" &&
+          (account.category_id === 1 || account.category_id === 3)
+      );
 
-        if (
-          Array.isArray(cardsResponse.data) &&
-          cardsResponse.data.length > 0
-        ) {
-          setCards(cardsResponse.data);
-        }
-
-        const income = accountsResponse.data.filter(
-          (account) =>
-            account.status === "paid" &&
-            (account.category_id === 2 || account.category_id === 4)
-        );
-        const expenses = accountsResponse.data.filter(
-          (account) =>
-            account.status === "paid" &&
-            (account.category_id === 1 || account.category_id === 3)
-        );
-
-        setIncomeData(income);
-        setExpenseData(expenses);
-      } catch (error) {
-        console.error("Ошибка при загрузке данных", error);
-      }
-    };
-
-    fetchData();
-  }, [token]);
+      setIncomeData(income);
+      setExpenseData(expenses);
+    } catch (error) {
+      console.error("Ошибка при загрузке данных", error);
+    }
+  };
 
   const handleAddCard = async () => {
     try {
@@ -211,9 +208,10 @@ function Home() {
       }
 
       const [year, month] = newCard.expiration_date.split("-");
-      const formattedExpirationDate = `${year}-${month}-31`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const formattedExpirationDate = `${year}-${month}-${lastDay}`;
 
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:5000/cards",
         {
           ...newCard,
@@ -225,12 +223,12 @@ function Home() {
           },
         }
       );
-      onAddCard(response.data);
       handleCloseCardModal();
-      handleAddCard();
-      toast.success(t("dashboard.addCardSuccess"));
+      toast.success(t("homeToast.addCardSuccess"));
+      fetchCard();
     } catch (error) {
-      toast.error(t("dashboard.addCardError"));
+      console.error("Error adding card:", error);
+      toast.error(t("homeToast.addCardError"));
     }
   };
 
@@ -255,10 +253,6 @@ function Home() {
       console.error("Ошибка при загрузке задач:", error);
     }
   };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
 
   const addTask = async (task) => {
     try {
@@ -396,7 +390,24 @@ function Home() {
     document.body.removeChild(textArea);
     toast.success(t("homeToast.textCopySuccess"));
   };
-  
+
+  const deleteCard = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/cards/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Карта успешно удален!");
+      fetchCard();
+    } catch (error) {
+      toast.error("Ошибка удаления карта: " + error.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+    fetchData();
+    fetchCard();
+  }, []);
 
   return (
     <div>
@@ -410,15 +421,17 @@ function Home() {
           <ScrollableContainer>
             <Row style={{ display: "flex", alignItems: "stretch" }}>
               {cards.length > 0 ? (
-                cards.map((card, index) => (
+                cards.map((card) => (
                   <Col
                     md={6}
-                    key={index}
                     style={{ display: "flex", flexDirection: "column" }}
                   >
                     <Card style={{ flex: 1 }}>
                       <Card.Body>
-                        <Card.Title>{t("dashboard.creditCard")}</Card.Title>
+                        <CardContainer>
+                          <Card.Title>{t("dashboard.creditCard")}</Card.Title>
+                          <FaTrash onClick={() => deleteCard(card.id)} />
+                        </CardContainer>
                         <p>
                           {t("dashboard.balance")}: {card.balance} ₽
                         </p>
@@ -523,9 +536,9 @@ function Home() {
                   <Card.Body>
                     <Card.Title>{t("dashboard.listCustomers")}</Card.Title>
                     <ClientList>
-                      {clients.map((client, index) => (
+                      {clients.map((client) => (
                         <CardDiv
-                          key={client.id || index}
+                          key={client.id}
                           onClick={() =>
                             handleCopyText(`${client.name}: ${client.phone}`)
                           }
@@ -543,9 +556,9 @@ function Home() {
                   <Card.Body>
                     <Card.Title>{t("dashboard.listAccounts")}</Card.Title>
                     <AccountList>
-                      {incomeData.map((account, index) => (
+                      {incomeData.map((account) => (
                         <CardDiv
-                          key={account.id || index}
+                          key={account.id}
                           onClick={() =>
                             handleCopyText(
                               `${account.description} - ${account.amount} ₽`
@@ -555,9 +568,9 @@ function Home() {
                           {account.description} - {account.amount} ₽
                         </CardDiv>
                       ))}
-                      {expenseData.map((account, index) => (
+                      {expenseData.map((account) => (
                         <CardDiv
-                          key={account.id || index}
+                          key={account.id}
                           onClick={() =>
                             handleCopyText(
                               `${account.description} - ${account.amount} ₽`
@@ -576,8 +589,8 @@ function Home() {
                   <Card.Body>
                     <Card.Title>{t("dashboard.listTasks")}</Card.Title>
                     <ClientList>
-                      {tasks.notStarted.map((task, index) => (
-                        <CardDiv key={task.id || index}>
+                      {tasks.notStarted.map((task) => (
+                        <CardDiv key={task.id}>
                           <h3>{task.title}</h3>
                           <p> {task.description}</p>
                         </CardDiv>
@@ -668,13 +681,8 @@ function Home() {
               <Card>
                 <Card.Body>
                   <Card.Title>{t("taskBoard.notStartedTitle")}</Card.Title>
-                  {tasks.notStarted.map((task, index) => (
-                    <TaskDiv
-                      key={task.id || index}
-                      onClick={() =>
-                        handleUpdateTask(task.id, { status: "in_progress" })
-                      }
-                    >
+                  {tasks.notStarted.map((task) => (
+                    <TaskDiv>
                       <h3>{task.title}</h3>
                       <p>{task.description}</p>
                       <Dropdown>
@@ -719,13 +727,8 @@ function Home() {
               <Card>
                 <Card.Body>
                   <Card.Title>{t("taskBoard.inProgressTitle")}</Card.Title>
-                  {tasks.inProgress.map((task, index) => (
-                    <TaskDiv
-                      key={task.id || index}
-                      onClick={() =>
-                        handleUpdateTask(task.id, { status: "completed" })
-                      }
-                    >
+                  {tasks.inProgress.map((task) => (
+                    <TaskDiv>
                       <h3>{task.title}</h3>
                       <p>{task.description}</p>
                       <Dropdown>
@@ -759,9 +762,9 @@ function Home() {
               <Card>
                 <Card.Body>
                   <Card.Title>{t("taskBoard.completedTitle")}</Card.Title>
-                  {tasks.completed.map((task, index) => (
+                  {tasks.completed.map((task) => (
                     <TaskDiv
-                      key={task.id || index}
+                      key={task.id}
                       onClick={() => deleteTask(task.id)}
                     >
                       <h3>{task.title}</h3>
@@ -952,4 +955,9 @@ const AccountList = styled.div`
 
 const GraphWrapper = styled.div`
   height: 500px;
+`;
+
+const CardContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
 `;
