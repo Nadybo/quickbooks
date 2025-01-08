@@ -704,15 +704,15 @@ app.get("/reports", authenticateToken, (req, res) => {
 });
 
 app.post("/reports", authenticateToken, (req, res) => {
-  const userId = req.user.userId; // ID пользователя из токена
-  const { report_name, report_data } = req.body;
+  const userId = req.user.userId;
+  const { report_name } = req.body;
 
   const query = `
-      INSERT INTO reports (user_id, report_name, report_data) 
-      VALUES (?, ?, ?)
+      INSERT INTO reports (user_id, report_name) 
+      VALUES (?, ?)
     `;
 
-  db.query(query, [userId, report_name, report_data], (err, result) => {
+  db.query(query, [userId, report_name], (err, result) => {
     if (err) {
       console.error("Ошибка при добавлении отчета:", err);
       return res.status(500).send({ message: "Ошибка сервера." });
