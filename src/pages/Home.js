@@ -591,8 +591,9 @@ function Home() {
                     <ClientList>
                       {tasks.notStarted.map((task) => (
                         <CardDiv key={task.id}>
-                          <h3>{task.title}</h3>
+                          <h4>{task.title}</h4>
                           <p> {task.description}</p>
+                          <p style={{ fontSize: '12px' }}>{new Date(task.updated_at).toLocaleDateString()}</p>
                         </CardDiv>
                       ))}
                     </ClientList>
@@ -676,197 +677,215 @@ function Home() {
         </Tab>
 
         <Tab eventKey="planner" title={t("dashboard.titlePlanner")}>
-          <Row className="mt-4">
-            <Col md={4}>
-              <Card>
-                <Card.Body>
-                  <Card.Title>{t("taskBoard.notStartedTitle")}</Card.Title>
-                  {tasks.notStarted.map((task) => (
-                    <TaskDiv>
-                      <h3>{task.title}</h3>
-                      <p>{task.description}</p>
-                      <Dropdown>
-                        <Dropdown.Toggle
-                          variant="primary"
-                          size="sm"
-                          id="dropdown-menu-end"
-                        >
-                          {t("taskBoard.actionsDropdown")}
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                          <Dropdown.Item onClick={() => deleteTask(task.id)}>
-                            <FaTrash />
-                            {t("taskBoard.deleteTask")}
-                          </Dropdown.Item>
-                          <Dropdown.Item
-                            onClick={() => handleShowEditModal(task)}
+          <ScrollableContainer>
+            <Row>
+              <Col md={4}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>{t("taskBoard.notStartedTitle")}</Card.Title>
+                    {tasks.notStarted.map((task) => (
+                      <TaskDiv>
+                        <h4>{task.title}</h4>
+                        <p>{task.description}</p>
+                        <DateContainer>
+                        <Dropdown>
+                          <Dropdown.Toggle
+                            variant="primary"
+                            size="sm"
+                            id="dropdown-menu-end"
                           >
-                            <FaEdit />
-                            {t("taskBoard.editTask")}
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
-                    </TaskDiv>
-                  ))}
+                            {t("taskBoard.actionsDropdown")}
+                          </Dropdown.Toggle>
+                          <Dropdown.Menu>
+                            <Dropdown.Item onClick={() => deleteTask(task.id)}>
+                              <FaTrash />
+                              {t("taskBoard.deleteTask")}
+                            </Dropdown.Item>
+                            <Dropdown.Item
+                              onClick={() => handleShowEditModal(task)}
+                            >
+                              <FaEdit />
+                              {t("taskBoard.editTask")}
+                            </Dropdown.Item>
+                          </Dropdown.Menu>
+                        </Dropdown>
+                        <p style={{ fontSize: '12px' }}>{new Date(task.updated_at).toLocaleDateString()}</p>
+                        </DateContainer>
+                       
+                      </TaskDiv>
+                    ))}
 
-                  <TaskDiv
-                    onClick={handleShowModal}
-                    style={{
-                      cursor: "pointer",
-                      border: "1px dashed #ccc",
-                      padding: "10px",
-                    }}
-                  >
-                    <FaPlus size={20} />
-                  </TaskDiv>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col md={4}>
-              <Card>
-                <Card.Body>
-                  <Card.Title>{t("taskBoard.inProgressTitle")}</Card.Title>
-                  {tasks.inProgress.map((task) => (
-                    <TaskDiv>
-                      <h3>{task.title}</h3>
-                      <p>{task.description}</p>
-                      <Dropdown>
-                        <Dropdown.Toggle
-                          variant="primary"
-                          size="sm"
-                          id="dropdown-menu-end"
-                        >
-                          {t("taskBoard.actionsDropdown")}
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                          <Dropdown.Item onClick={() => deleteTask(task.id)}>
-                            <FaTrash />
-                            {t("taskBoard.deleteTask")}
-                          </Dropdown.Item>
-                          <Dropdown.Item
-                            onClick={() => handleShowEditModal(task)}
-                          >
-                            <FaEdit />
-                            {t("taskBoard.editTask")}
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
-                    </TaskDiv>
-                  ))}
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col md={4}>
-              <Card>
-                <Card.Body>
-                  <Card.Title>{t("taskBoard.completedTitle")}</Card.Title>
-                  {tasks.completed.map((task) => (
                     <TaskDiv
-                      key={task.id}
-                      onClick={() => deleteTask(task.id)}
+                      onClick={handleShowModal}
+                      style={{
+                        cursor: "pointer",
+                        border: "1px dashed #ccc",
+                        padding: "10px",
+                      }}
                     >
-                      <h3>{task.title}</h3>
-                      <p>{task.description}</p>
+                      <FaPlus size={20} />
                     </TaskDiv>
-                  ))}
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-          <Row>
-            <Col md={12}>
-              <Modal show={showModal} onHide={handleCloseModal}>
-                <Modal.Header closeButton>
-                  <Modal.Title>
-                    {editTask
-                      ? t("taskBoard.modalTitleEditTask")
-                      : t("taskBoard.modalTitleAddTask")}
-                  </Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                  <form>
-                    <div className="form-group">
-                      <label>{t("taskBoard.form.titleLabel")}</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={editTask ? editTask.title : newTask.title}
-                        onChange={(e) =>
-                          editTask
-                            ? setEditTask({
-                                ...editTask,
-                                title: e.target.value,
-                              })
-                            : setNewTask({ ...newTask, title: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="form-group mt-3">
-                      <label>{t("taskBoard.form.descriptionLabel")}</label>
-                      <textarea
-                        className="form-control"
-                        rows="3"
-                        value={
-                          editTask ? editTask.description : newTask.description
-                        }
-                        onChange={(e) =>
-                          editTask
-                            ? setEditTask({
-                                ...editTask,
-                                description: e.target.value,
-                              })
-                            : setNewTask({
-                                ...newTask,
-                                description: e.target.value,
-                              })
-                        }
-                      />
-                    </div>
-                    <div className="form-group mt-3">
-                      <label>{t("taskBoard.form.statusLabel")}</label>
-                      <select
-                        className="form-control"
-                        value={editTask ? editTask.status : newTask.status}
-                        onChange={(e) =>
-                          editTask
-                            ? setEditTask({
-                                ...editTask,
-                                status: e.target.value,
-                              })
-                            : setNewTask({ ...newTask, status: e.target.value })
-                        }
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col md={4}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>{t("taskBoard.inProgressTitle")}</Card.Title>
+                    {tasks.inProgress.map((task) => (
+                      <TaskDiv>
+                        <h4>{task.title}</h4>
+                        <p>{task.description}</p>
+                        <div></div>
+                        <DateContainer>
+                        <Dropdown>
+                          <Dropdown.Toggle
+                            variant="primary"
+                            size="sm"
+                            id="dropdown-menu-end"
+                          >
+                            {t("taskBoard.actionsDropdown")}
+                          </Dropdown.Toggle>
+                          <Dropdown.Menu>
+                            <Dropdown.Item onClick={() => deleteTask(task.id)}>
+                              <FaTrash />
+                              {t("taskBoard.deleteTask")}
+                            </Dropdown.Item>
+                            <Dropdown.Item
+                              onClick={() => handleShowEditModal(task)}
+                            >
+                              <FaEdit />
+                              {t("taskBoard.editTask")}
+                            </Dropdown.Item>
+                          </Dropdown.Menu>
+                        </Dropdown>
+                        <p style={{ fontSize: '12px' }}>{new Date(task.updated_at).toLocaleDateString()}</p>
+                        </DateContainer>
+                      </TaskDiv>
+                    ))}
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col md={4}>
+                <Card>
+                  <Card.Body>
+                    <Card.Title>{t("taskBoard.completedTitle")}</Card.Title>
+                    {tasks.completed.map((task) => (
+                      <TaskDiv
+                        key={task.id}
+                        onClick={() => deleteTask(task.id)}
                       >
-                        <option value="not_started">
-                          {t("taskBoard.form.statusOptions.notStarted")}
-                        </option>
-                        <option value="in_progress">
-                          {t("taskBoard.form.statusOptions.inProgress")}
-                        </option>
-                        <option value="completed">
-                          {t("taskBoard.form.statusOptions.completed")}
-                        </option>
-                      </select>
-                    </div>
-                  </form>
-                </Modal.Body>
-                <Modal.Footer>
-                  <Button variant="secondary" onClick={handleCloseModal}>
-                    {t("taskBoard.cancelButtonText")}
-                  </Button>
-                  <Button
-                    variant="success"
-                    onClick={editTask ? handleSaveEditTask : handleAddTask}
-                  >
-                    {editTask
-                      ? t("taskBoard.saveChangesButtonText")
-                      : t("taskBoard.addButtonText")}
-                  </Button>
-                </Modal.Footer>
-              </Modal>
-            </Col>
-          </Row>
+                        <h4>{task.title}</h4>
+                        <p>{task.description}</p>
+                      </TaskDiv>
+                    ))}
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={12}>
+                <Modal show={showModal} onHide={handleCloseModal}>
+                  <Modal.Header closeButton>
+                    <Modal.Title>
+                      {editTask
+                        ? t("taskBoard.modalTitleEditTask")
+                        : t("taskBoard.modalTitleAddTask")}
+                    </Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>
+                    <form>
+                      <div className="form-group">
+                        <label>{t("taskBoard.form.titleLabel")}</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={editTask ? editTask.title : newTask.title}
+                          onChange={(e) =>
+                            editTask
+                              ? setEditTask({
+                                  ...editTask,
+                                  title: e.target.value,
+                                })
+                              : setNewTask({
+                                  ...newTask,
+                                  title: e.target.value,
+                                })
+                          }
+                        />
+                      </div>
+                      <div className="form-group mt-3">
+                        <label>{t("taskBoard.form.descriptionLabel")}</label>
+                        <textarea
+                          className="form-control"
+                          rows="3"
+                          value={
+                            editTask
+                              ? editTask.description
+                              : newTask.description
+                          }
+                          onChange={(e) =>
+                            editTask
+                              ? setEditTask({
+                                  ...editTask,
+                                  description: e.target.value,
+                                })
+                              : setNewTask({
+                                  ...newTask,
+                                  description: e.target.value,
+                                })
+                          }
+                        />
+                      </div>
+                      <div className="form-group mt-3">
+                        <label>{t("taskBoard.form.statusLabel")}</label>
+                        <select
+                          className="form-control"
+                          value={editTask ? editTask.status : newTask.status}
+                          onChange={(e) =>
+                            editTask
+                              ? setEditTask({
+                                  ...editTask,
+                                  status: e.target.value,
+                                })
+                              : setNewTask({
+                                  ...newTask,
+                                  status: e.target.value,
+                                })
+                          }
+                        >
+                          <option value="not_started">
+                            {t("taskBoard.form.statusOptions.notStarted")}
+                          </option>
+                          <option value="in_progress">
+                            {t("taskBoard.form.statusOptions.inProgress")}
+                          </option>
+                          <option value="completed">
+                            {t("taskBoard.form.statusOptions.completed")}
+                          </option>
+                        </select>
+                      </div>
+                    </form>
+                  </Modal.Body>
+                  <Modal.Footer>
+                    <Button variant="secondary" onClick={handleCloseModal}>
+                      {t("taskBoard.cancelButtonText")}
+                    </Button>
+                    <Button
+                      variant="success"
+                      onClick={editTask ? handleSaveEditTask : handleAddTask}
+                    >
+                      {editTask
+                        ? t("taskBoard.saveChangesButtonText")
+                        : t("taskBoard.addButtonText")}
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
+              </Col>
+            </Row>
+          </ScrollableContainer>
         </Tab>
       </Tabs>
     </div>
@@ -960,4 +979,9 @@ const GraphWrapper = styled.div`
 const CardContainer = styled.div`
   display: flex;
   justify-content: space-between;
+`;
+const DateContainer = styled.div`
+display: flex;
+flex-direction: row;
+justify-content: space-between;
 `;

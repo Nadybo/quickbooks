@@ -87,7 +87,7 @@ function RegisterForm() {
                 </Button>
 
                 <div className="mt-3 text-center">
-                    <span>{t('form.text')}</span>
+                    <span>{t('form.textToLogin')}</span>
                     <Link to="/login">{t('form.login')}</Link>
                 </div>
             </form>

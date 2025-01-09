@@ -4,8 +4,10 @@ import axios from 'axios';
 import { FloatingLabel, Form, Button } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useTranslation } from 'react-i18next';
 
 function LoginPage({ onLogin }) {
+    const {t} = useTranslation();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -79,7 +81,7 @@ function LoginPage({ onLogin }) {
                             {isLoading ? 'Загрузка...' : 'Войти'}
                         </Button>
                         <div className="mt-3 text-center">
-                            <span>Нет аккаунта? </span>
+                            <span>{t('form.text')}</span>
                             <Link to="/register">Зарегистрироваться</Link>
                         </div>
                     </form>

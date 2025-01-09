@@ -529,7 +529,7 @@ app.post("/tasks", authenticateToken, (req, res) => {
   const userId = req.user.userId;
   const { title, description, status, start_date, due_date } = req.body;
 
-  const query = `INSERT INTO tasks (user_id, title, description, status, start_date, due_date, created_at, updated_at) 
+  const query = `INSERT INTO tasks (user_id, title, description, status, due_date, start_date, created_at, updated_at) 
                    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`;
 
   db.query(
