@@ -9,7 +9,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { Doughnut, Line } from "react-chartjs-2";
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -67,11 +67,11 @@ function Reports() {
           apiRequest("http://localhost:5000/accounts"),
           apiRequest("http://localhost:5000/clients"),
         ]);
-  
+
       const clientsMap = Object.fromEntries(
         clientsResponse.data.map((client) => [client.id, client.name])
       );
-  
+
       const income = accountsResponse.data
         .filter(
           (account) =>
@@ -82,7 +82,7 @@ function Reports() {
           ...account,
           client_name: clientsMap[account.client_id] || "Неизвестно",
         }));
-  
+
       const expenses = accountsResponse.data
         .filter(
           (account) =>
@@ -93,13 +93,13 @@ function Reports() {
           ...account,
           client_name: clientsMap[account.client_id] || "Неизвестно",
         }));
-  
+
       setIncomeData(income);
       setExpenseData(expenses);
-  
+
       setReports(reportsResponse.data);
       setClients(clientsResponse.data);
-  
+
       setAccounts(
         accountsResponse.data.map((account) => ({
           ...account,
@@ -110,12 +110,10 @@ function Reports() {
       toast.error("Ошибка загрузки данных: " + error.message);
     }
   };
-  
 
   useEffect(() => {
     fetchAllData();
   }, []);
-
 
   const handleCheckboxChange = (e) => {
     const { name, checked } = e.target;
@@ -138,13 +136,15 @@ function Reports() {
     }
 
     if (selectedData.paidBills) {
-      const paidAccounts = accounts.filter(account => account.status === "paid");
-    
+      const paidAccounts = accounts.filter(
+        (account) => account.status === "paid"
+      );
+
       dataToExport.push(
         ...paidAccounts.map((account) => ({
           client_name: account.client_name,
           amount: account.amount,
-          status: account.status, 
+          status: account.status,
           description: account.description,
           created_at: account.created_at,
         }))
@@ -152,19 +152,20 @@ function Reports() {
     }
 
     if (selectedData.unpaidBills) {
-      const paidAccounts = accounts.filter(account => account.status === "unpaid");
-    
+      const paidAccounts = accounts.filter(
+        (account) => account.status === "unpaid"
+      );
+
       dataToExport.push(
         ...paidAccounts.map((account) => ({
           client_name: account.client_name,
           amount: account.amount,
-          status: account.status, 
+          status: account.status,
           description: account.description,
           created_at: account.created_at,
         }))
       );
     }
-    
 
     if (selectedData.income) {
       dataToExport.push(
@@ -177,8 +178,6 @@ function Reports() {
         }))
       );
     }
-    
-    
 
     if (selectedData.transactionsReport) {
       dataToExport.push(
@@ -207,30 +206,30 @@ function Reports() {
     try {
       if (format === "excel") {
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    
+
         const borderStyle = {
-            top: { style: 'thin' },
-            right: { style: 'thin' },
-            bottom: { style: 'thin' },
-            left: { style: 'thin' }
+          top: { style: "thin" },
+          right: { style: "thin" },
+          bottom: { style: "thin" },
+          left: { style: "thin" },
         };
-    
-        const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+        const range = XLSX.utils.decode_range(worksheet["!ref"]);
         for (let row = range.s.r; row <= range.e.r; row++) {
-            for (let col = range.s.c; col <= range.e.c; col++) {
-                const cell = worksheet[XLSX.utils.encode_cell({ r: row, c: col })];
-                if (cell) {
-                    cell.s = {
-                        border: borderStyle
-                    };
-                }
+          for (let col = range.s.c; col <= range.e.c; col++) {
+            const cell = worksheet[XLSX.utils.encode_cell({ r: row, c: col })];
+            if (cell) {
+              cell.s = {
+                border: borderStyle,
+              };
             }
+          }
         }
-    
+
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
         XLSX.writeFile(workbook, "exported_data.xlsx");
-    } else if (format === "csv") {
+      } else if (format === "csv") {
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const csv = XLSX.utils.sheet_to_csv(worksheet);
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -238,11 +237,9 @@ function Reports() {
         link.href = URL.createObjectURL(blob);
         link.setAttribute("download", "exported_data.csv");
         link.click();
-    }
-    
-    else if (format === "pdf") {
+      } else if (format === "pdf") {
         const doc = new jsPDF();
-      
+
         const tableData = dataToExport.map((item) => [
           item.client_name || "N/A",
           item.amount || "N/A",
@@ -250,7 +247,7 @@ function Reports() {
           item.description || "N/A",
           item.created_at || "N/A",
         ]);
-      
+
         const tableHeaders = [
           "Client Name",
           "Amount",
@@ -258,22 +255,21 @@ function Reports() {
           "Description",
           "Created At",
         ];
-      
+
         if (tableData.length === 0) {
           toast.error("Нет данных для экспорта в PDF.");
           return;
         }
-      
+
         doc.autoTable({
           head: [tableHeaders],
-          body: tableData,     
-          theme: "grid",        
-          styles: { fontSize: 10 }, 
+          body: tableData,
+          theme: "grid",
+          styles: { fontSize: 10 },
         });
-      
+
         doc.save("exported_data.pdf");
       }
-      
 
       const reportName = `Exported ${format.toUpperCase()} Report`;
 
@@ -310,7 +306,6 @@ function Reports() {
     }
   };
 
-
   const totalIncome = incomeData.reduce(
     (sum, account) => sum + parseFloat(account.amount),
     0
@@ -342,7 +337,7 @@ function Reports() {
         borderColor: "green",
         backgroundColor: "rgba(0, 255, 0, 0.2)",
         fill: true,
-        yAxisID: "y1", 
+        yAxisID: "y1",
       },
       {
         label: "Расходы",
@@ -350,7 +345,7 @@ function Reports() {
         borderColor: "red",
         backgroundColor: "rgba(255, 0, 0, 0.2)",
         fill: true,
-        yAxisID: "y2", 
+        yAxisID: "y2",
       },
     ],
   };
@@ -360,7 +355,7 @@ function Reports() {
     scales: {
       y1: {
         type: "linear",
-        position: "left", 
+        position: "left",
         ticks: {
           beginAtZero: true,
         },
@@ -376,6 +371,7 @@ function Reports() {
   };
   return (
     <MainDiv>
+      <h3 className="mb-4">{t("reports.title")}</h3>
       <Row>
         <ToastContainer />
         <Col md={12} className="mt-3">
@@ -403,13 +399,11 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="paidBills">
-                    {t("reports.paidBills")}
+                      {t("reports.paidBills")}
                     </CheckboxLabel>
                   </CardWrapper>
                   <CardWrapper
-                    className={
-                      selectedData.expense ? "selected" : ""
-                    }
+                    className={selectedData.expense ? "selected" : ""}
                     onClick={() =>
                       handleCheckboxChange({
                         target: {
@@ -427,7 +421,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="expense">
-                    {t("reports.expenses")}
+                      {t("reports.expenses")}
                     </CheckboxLabel>
                   </CardWrapper>
                 </CheckboxContainer>
@@ -452,7 +446,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="unpaidBills">
-                    {t("reports.unpaidBills")}
+                      {t("reports.unpaidBills")}
                     </CheckboxLabel>
                   </CardWrapper>
 
@@ -475,7 +469,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="income">
-                    {t("reports.income")}
+                      {t("reports.income")}
                     </CheckboxLabel>
                   </CardWrapper>
                 </CheckboxContainer>
@@ -500,7 +494,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="clientsReport">
-                    {t("reports.clientsReport")}
+                      {t("reports.clientsReport")}
                     </CheckboxLabel>
                   </CardWrapper>
 
@@ -525,7 +519,7 @@ function Reports() {
                       onChange={handleCheckboxChange}
                     />
                     <CheckboxLabel htmlFor="transactionsReport">
-                    {t("reports.transactionsReport")}
+                      {t("reports.transactionsReport")}
                     </CheckboxLabel>
                   </CardWrapper>
                 </CheckboxContainer>
@@ -548,7 +542,7 @@ function Reports() {
 
               <div className="mt-4 d-flex align-items-center">
                 <Button variant="success" onClick={() => exportData("excel")}>
-                {t("reports.exportExcel")}
+                  {t("reports.exportExcel")}
                 </Button>
                 <Button
                   variant="success"
@@ -562,7 +556,7 @@ function Reports() {
                   className="ms-2"
                   onClick={() => exportData("pdf")}
                 >
-                 {t("reports.exportPdf")}
+                  {t("reports.exportPdf")}
                 </Button>
                 <Dropdown className="ms-2">
                   <Dropdown.Toggle
@@ -574,10 +568,10 @@ function Reports() {
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item onClick={() => exportChart("doughnutChart")}>
-                    {t("reports.doughnutChart")}
+                      {t("reports.doughnutChart")}
                     </Dropdown.Item>
                     <Dropdown.Item onClick={() => exportChart("LineChart")}>
-                    {t("reports.lineChart")}
+                      {t("reports.lineChart")}
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
@@ -585,7 +579,6 @@ function Reports() {
             </Card.Body>
           </Card>
         </Col>
-        
       </Row>
     </MainDiv>
   );
@@ -594,8 +587,8 @@ function Reports() {
 export default Reports;
 
 const MainDiv = styled.div`
-  max-height: 800px;
-  min-height: 800px;
+  max-height: 810px;
+  min-height: 810px;
   overflow-y: auto;
   overflow-x: hidden;
 `;
@@ -643,7 +636,7 @@ const CardWrapper = styled.div`
 `;
 
 const CheckboxInput = styled.input`
-  display: none; 
+  display: none;
 `;
 
 const CheckboxLabel = styled.label`

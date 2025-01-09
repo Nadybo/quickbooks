@@ -191,6 +191,7 @@
     "saveButton": "Save"
   },
   "reports": {
+    "title":"Reports",
     "selectReportTypes": "Select the report types to export:",
     "paidBills": "Paid Bills",
     "individualUserReports": "Individual User Reports",

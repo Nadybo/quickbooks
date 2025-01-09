@@ -191,6 +191,7 @@
     "saveButton": "Сохранить"
   },
   "reports": {
+    "title":"Отчеты",
     "selectReportTypes": "Выберите типы отчетов для экспорта:",
     "paidBills": "Оплаченные счета",
     "individualUserReports": "Индивидуальные отчеты пользователя",
